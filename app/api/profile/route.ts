@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { 
+  getUserById,
+  getTransactionsByUserId,
+  getBuyRequestsByUserId,
+  updateUser,
+  convertTimestamps
+} from '@/lib/firestore-db';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
 export async function GET(request: Request) {
   try {
@@ -26,20 +34,8 @@ export async function GET(request: Request) {
     }
 
     // Получение данных пользователя
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role, avatar, created_at FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
-
+    const user: any = await getUserById(session.user_id);
+    
     if (!user) {
       return NextResponse.json(
         { error: 'Пользователь не найден' },
@@ -48,40 +44,24 @@ export async function GET(request: Request) {
     }
 
     // Получение транзакций пользователя
-    const transactions: any[] = await new Promise((resolve, reject) => {
-      db.all(
-        'SELECT id, exchange_id, from_currency, to_currency, amount_from, amount_to, status, created_at FROM transactions WHERE user_id = ? ORDER BY created_at DESC',
-        [session.user_id],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
-
+    const transactions = await getTransactionsByUserId(session.user_id);
+    
     // Получение активной заявки на покупку пользователя
-    const activeBuyRequest: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT * FROM buy_requests WHERE user_id = ? AND status IN (?, ?, ?) ORDER BY created_at DESC LIMIT 1',
-        [session.user_id, 'pending', 'processing', 'paid'],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row || null);
-          }
-        }
-      );
-    });
+    const allBuyRequests = await getBuyRequestsByUserId(session.user_id);
+    const activeBuyRequest = allBuyRequests.find((request: any) => 
+      ['pending', 'processing', 'paid'].includes(request.status)
+    ) || null;
+
+    // Конвертация timestamp'ов
+    const convertedUser = convertTimestamps(user);
+    const convertedTransactions = transactions.map((transaction: any) => convertTimestamps(transaction));
+    const convertedActiveBuyRequest = activeBuyRequest ? convertTimestamps(activeBuyRequest) : null;
 
     return NextResponse.json(
       {
-        user,
-        transactions,
-        activeBuyRequest
+        user: convertedUser,
+        transactions: convertedTransactions,
+        activeBuyRequest: convertedActiveBuyRequest
       },
       { status: 200 }
     );
@@ -155,40 +135,30 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
     
     // Сохранение файла в public/avatars
-    const fs = await import('fs');
-    const path = await import('path');
-    
-    const filepath = path.join(process.cwd(), 'public', 'avatars', filename);
+    const filepath = join(process.cwd(), 'public', 'avatars', filename);
     
     // Создание директории, если она не существует
-    const dir = path.dirname(filepath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = join(process.cwd(), 'public', 'avatars');
+    try {
+      await writeFile(dir, '', { flag: 'wx' });
+    } catch (err) {
+      // Директория уже существует
     }
     
     // Сохранение файла
-    fs.writeFileSync(filepath, buffer);
+    await writeFile(filepath, buffer);
     
     // Обновление аватарки в базе данных
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE users SET avatar = ? WHERE id = ?',
-        [`/avatars/${filename}`, session.user_id],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
+    const updatedUser = await updateUser(session.user_id, {
+      avatar: `/avatars/${filename}`
     });
 
     return NextResponse.json(
       { 
         success: true,
         message: 'Аватар успешно обновлен',
-        avatar: `/avatars/${filename}`
+        avatar: `/avatars/${filename}`,
+        user: convertTimestamps(updatedUser)
       },
       { status: 200 }
     );

@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { 
+  getUserById,
+  getAllUsers, 
+  updateUserRole,
+  convertTimestamps
+} from '@/lib/firestore-db';
 
 // Получение списка пользователей (только для администраторов)
 export async function GET(request: Request) {
@@ -27,19 +32,13 @@ export async function GET(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка роли пользователя
     if (user.role !== 'admin') {
@@ -50,22 +49,13 @@ export async function GET(request: Request) {
     }
 
     // Получение всех пользователей
-    const users: any[] = await new Promise((resolve, reject) => {
-      db.all(
-        'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC',
-        [],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
+    const users = await getAllUsers();
+    
+    // Конвертация timestamp'ов
+    const usersWithConvertedDates = users.map((user: any) => convertTimestamps(user));
 
     return NextResponse.json(
-      { users },
+      { users: usersWithConvertedDates },
       { status: 200 }
     );
   } catch (error) {
@@ -102,19 +92,13 @@ export async function PUT(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const adminUser: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const adminUser: any = await getUserById(session.user_id);
+    if (!adminUser) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка роли пользователя
     if (adminUser.role !== 'admin') {
@@ -153,27 +137,13 @@ export async function PUT(request: Request) {
     }
 
     // Обновление роли пользователя
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE users SET role = ? WHERE id = ?',
-        [role, userId],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else if (this.changes === 0) {
-            // Если ни одна строка не была изменена, пользователь не найден
-            reject(new Error('Пользователь не найден'));
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    const updatedUser = await updateUserRole(userId, { role });
 
     return NextResponse.json(
       { 
         success: true,
-        message: 'Роль пользователя успешно обновлена'
+        message: 'Роль пользователя успешно обновлена',
+        user: convertTimestamps(updatedUser)
       },
       { status: 200 }
     );

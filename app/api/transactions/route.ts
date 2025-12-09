@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { 
+  getAllTransactions,
+  getTransactionsByUserId,
+  updateTransaction,
+  getUserById,
+  convertTimestamps
+} from '@/lib/firestore-db';
 
 // Получение списка транзакций (для администраторов - все, для операторов - только ожидающие)
 export async function GET(request: Request) {
@@ -27,55 +33,35 @@ export async function GET(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
-    let transactionsQuery = '';
-    let queryParams: any[] = [];
+    let transactions: any[] = [];
 
     // Формирование запроса в зависимости от роли пользователя
     if (user.role === 'admin') {
       // Для администраторов - все транзакции
-      transactionsQuery = 'SELECT t.id, t.user_id, u.username, t.exchange_id, t.from_currency, t.to_currency, t.amount_from, t.amount_to, t.status, t.created_at FROM transactions t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC';
+      transactions = await getAllTransactions();
     } else if (user.role === 'operator') {
       // Для операторов - только ожидающие транзакции
-      transactionsQuery = 'SELECT t.id, t.user_id, u.username, t.exchange_id, t.from_currency, t.to_currency, t.amount_from, t.amount_to, t.status, t.created_at FROM transactions t JOIN users u ON t.user_id = u.id WHERE t.status = ? ORDER BY t.created_at DESC';
-      queryParams = ['pending'];
+      const allTransactions = await getAllTransactions();
+      transactions = allTransactions.filter((transaction: any) => transaction.status === 'pending');
     } else {
       // Для обычных пользователей - только их транзакции
-      transactionsQuery = 'SELECT id, exchange_id, from_currency, to_currency, amount_from, amount_to, status, created_at FROM transactions WHERE user_id = ? ORDER BY created_at DESC';
-      queryParams = [session.user_id];
+      transactions = await getTransactionsByUserId(session.user_id);
     }
 
-    // Получение транзакций
-    const transactions: any[] = await new Promise((resolve, reject) => {
-      db.all(
-        transactionsQuery,
-        queryParams,
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
+    // Конвертация timestamp'ов
+    const convertedTransactions = transactions.map((transaction: any) => convertTimestamps(transaction));
 
     return NextResponse.json(
       { 
-        transactions,
+        transactions: convertedTransactions,
         userRole: user.role
       },
       { status: 200 }
@@ -114,19 +100,13 @@ export async function PUT(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка роли пользователя
     if (user.role !== 'admin' && user.role !== 'operator') {
@@ -157,24 +137,13 @@ export async function PUT(request: Request) {
     }
 
     // Обновление статуса транзакции
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE transactions SET status = ? WHERE id = ?',
-        [status, transactionId],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    const updatedTransaction = await updateTransaction(transactionId, { status });
 
     return NextResponse.json(
       { 
         success: true,
-        message: 'Статус транзакции успешно обновлен'
+        message: 'Статус транзакции успешно обновлен',
+        transaction: convertTimestamps(updatedTransaction)
       },
       { status: 200 }
     );

@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { 
+  createDispute as createFirestoreDispute,
+  getAllDisputes,
+  getDisputesByUserId,
+  updateDispute,
+  getBuyRequestByRequestId,
+  updateBuyRequest,
+  getUserById,
+  convertTimestamps
+} from '@/lib/firestore-db';
 
 // Создание нового спора
 export async function POST(request: Request) {
@@ -38,20 +47,7 @@ export async function POST(request: Request) {
     }
 
     // Проверка, что заявка принадлежит пользователю
-    const requestDetails: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT user_id FROM buy_requests WHERE request_id = ?',
-        [requestId],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
-
+    const requestDetails: any = await getBuyRequestByRequestId(requestId);
     if (!requestDetails || requestDetails.user_id !== session.user_id) {
       return NextResponse.json(
         { error: 'Заявка не найдена или доступ запрещен' },
@@ -60,39 +56,21 @@ export async function POST(request: Request) {
     }
 
     // Создание спора
-    await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO disputes (request_id, user_id, reason) VALUES (?, ?, ?)',
-        [requestId, session.user_id, reason],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
+    const newDispute = await createFirestoreDispute({
+      request_id: requestId,
+      user_id: session.user_id,
+      reason: reason,
+      status: 'open'
     });
 
     // Обновление статуса заявки на "disputed"
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE buy_requests SET status = ? WHERE request_id = ?',
-        ['disputed', requestId],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    await updateBuyRequest(requestDetails.id, { status: 'disputed' });
 
     return NextResponse.json(
       { 
         success: true,
-        message: 'Спор успешно создан'
+        message: 'Спор успешно создан',
+        dispute: convertTimestamps(newDispute)
       },
       { status: 201 }
     );
@@ -129,37 +107,56 @@ export async function GET(request: Request) {
       );
     }
 
-    let disputesQuery = '';
-    let queryParams: any[] = [];
-
-    // Формирование запроса в зависимости от роли пользователя
-    if (session.user_role === 'admin') {
-      // Для администраторов - все споры
-      disputesQuery = 'SELECT d.*, br.crypto_type, br.amount, br.currency, u.username as user_username FROM disputes d JOIN buy_requests br ON d.request_id = br.request_id JOIN users u ON d.user_id = u.id ORDER BY d.created_at DESC';
-    } else {
-      // Для обычных пользователей - только их споры
-      disputesQuery = 'SELECT d.*, br.crypto_type, br.amount, br.currency FROM disputes d JOIN buy_requests br ON d.request_id = br.request_id WHERE d.user_id = ? ORDER BY d.created_at DESC';
-      queryParams = [session.user_id];
+    // Получение данных пользователя из сессии
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
+      );
     }
 
-    // Получение споров
-    const disputes: any[] = await new Promise((resolve, reject) => {
-      db.all(
-        disputesQuery,
-        queryParams,
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
+    let disputes: any[] = [];
+
+    // Формирование запроса в зависимости от роли пользователя
+    if (user.role === 'admin') {
+      // Для администраторов - все споры
+      disputes = await getAllDisputes();
+      // Добавляем информацию о заявке и пользователе
+      const disputesWithDetails = await Promise.all(disputes.map(async (dispute: any) => {
+        const requestDetails: any = await getBuyRequestByRequestId(dispute.request_id);
+        const userDetails: any = await getUserById(dispute.user_id);
+        return {
+          ...dispute,
+          crypto_type: requestDetails?.crypto_type || '',
+          amount: requestDetails?.amount || 0,
+          currency: requestDetails?.currency || '',
+          user_username: userDetails?.username || ''
+        };
+      }));
+      disputes = disputesWithDetails;
+    } else {
+      // Для обычных пользователей - только их споры
+      disputes = await getDisputesByUserId(session.user_id);
+      // Добавляем информацию о заявке
+      const disputesWithRequestDetails = await Promise.all(disputes.map(async (dispute: any) => {
+        const requestDetails: any = await getBuyRequestByRequestId(dispute.request_id);
+        return {
+          ...dispute,
+          crypto_type: requestDetails?.crypto_type || '',
+          amount: requestDetails?.amount || 0,
+          currency: requestDetails?.currency || ''
+        };
+      }));
+      disputes = disputesWithRequestDetails;
+    }
+
+    // Конвертация timestamp'ов
+    const convertedDisputes = disputes.map((dispute: any) => convertTimestamps(dispute));
 
     return NextResponse.json(
       { 
-        disputes
+        disputes: convertedDisputes
       },
       { status: 200 }
     );
@@ -197,19 +194,13 @@ export async function PUT(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка роли пользователя
     if (user.role !== 'admin') {
@@ -240,24 +231,13 @@ export async function PUT(request: Request) {
     }
 
     // Обновление статуса спора
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE disputes SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [status, disputeId],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    const updatedDispute = await updateDispute(disputeId, { status });
 
     return NextResponse.json(
       { 
         success: true,
-        message: 'Статус спора успешно обновлен'
+        message: 'Статус спора успешно обновлен',
+        dispute: convertTimestamps(updatedDispute)
       },
       { status: 200 }
     );

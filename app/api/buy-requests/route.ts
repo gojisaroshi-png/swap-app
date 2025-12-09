@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
-import { generateRequestId } from '@/lib/db';
+import { 
+  getAllBuyRequests,
+  getBuyRequestsByUserId,
+  getBuyRequestByRequestId,
+  createBuyRequest as createFirestoreBuyRequest,
+  updateBuyRequest,
+  getUserById,
+  convertTimestamps
+} from '@/lib/firestore-db';
 
 // Получение списка заявок (для администраторов - все, для операторов - только ожидающие, для пользователей - только свои)
 export async function GET(request: Request) {
@@ -28,55 +35,35 @@ export async function GET(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
-    let requestsQuery = '';
-    let queryParams: any[] = [];
+    let requests: any[] = [];
 
     // Формирование запроса в зависимости от роли пользователя
     if (user.role === 'admin') {
       // Для администраторов - все заявки
-      requestsQuery = 'SELECT br.*, u.username as user_username, o.username as operator_username FROM buy_requests br JOIN users u ON br.user_id = u.id LEFT JOIN users o ON br.operator_id = o.id ORDER BY br.created_at DESC';
+      requests = await getAllBuyRequests();
     } else if (user.role === 'operator') {
       // Для операторов - только ожидающие заявки
-      requestsQuery = 'SELECT br.*, u.username as user_username FROM buy_requests br JOIN users u ON br.user_id = u.id WHERE br.status = ? ORDER BY br.created_at DESC';
-      queryParams = ['pending'];
+      const allRequests = await getAllBuyRequests();
+      requests = allRequests.filter((request: any) => request.status === 'pending');
     } else {
       // Для обычных пользователей - только их заявки
-      requestsQuery = 'SELECT * FROM buy_requests WHERE user_id = ? ORDER BY created_at DESC';
-      queryParams = [session.user_id];
+      requests = await getBuyRequestsByUserId(session.user_id);
     }
 
-    // Получение заявок
-    const requests: any[] = await new Promise((resolve, reject) => {
-      db.all(
-        requestsQuery,
-        queryParams,
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
+    // Конвертация timestamp'ов
+    const convertedRequests = requests.map((request: any) => convertTimestamps(request));
 
     return NextResponse.json(
       { 
-        requests,
+        requests: convertedRequests,
         userRole: user.role
       },
       { status: 200 }
@@ -126,19 +113,10 @@ export async function POST(request: Request) {
     }
 
     // Проверка, есть ли у пользователя активные заявки
-    const activeRequest: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id FROM buy_requests WHERE user_id = ? AND status IN (?, ?)',
-        [session.user_id, 'pending', 'processing'],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    const userRequests = await getBuyRequestsByUserId(session.user_id);
+    const activeRequest = userRequests.find((request: any) => 
+      ['pending', 'processing'].includes(request.status)
+    );
 
     if (activeRequest) {
       return NextResponse.json(
@@ -147,29 +125,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Генерация уникального ID заявки
-    const requestId = generateRequestId();
-
     // Создание новой заявки
-    await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO buy_requests (user_id, request_id, crypto_type, amount, currency, payment_method, wallet_address) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [session.user_id, requestId, cryptoType, amount, currency, paymentMethod, walletAddress],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
+    const newRequest = await createFirestoreBuyRequest({
+      user_id: session.user_id,
+      crypto_type: cryptoType,
+      amount: parseFloat(amount),
+      currency,
+      payment_method: paymentMethod,
+      wallet_address: walletAddress,
+      status: 'pending'
     });
 
     return NextResponse.json(
       { 
         success: true,
         message: 'Заявка на покупку успешно создана',
-        requestId
+        requestId: newRequest.request_id
       },
       { status: 201 }
     );
@@ -181,6 +152,7 @@ export async function POST(request: Request) {
     );
   }
 }
+
 // Обновление статуса заявки (только для операторов и администраторов)
 export async function PUT(request: Request) {
   try {
@@ -206,19 +178,13 @@ export async function PUT(request: Request) {
     }
 
     // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка роли пользователя
     let requestId, status, paymentDetails, receiptImage, transactionHash;
@@ -273,54 +239,31 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Получение заявки по requestId
+    const requestDetails: any = await getBuyRequestByRequestId(requestId);
+    if (!requestDetails) {
+      return NextResponse.json(
+        { error: 'Заявка не найдена' },
+        { status: 404 }
+      );
+    }
+
     // Проверка роли пользователя для определенных статусов
     if (user.role !== 'admin' && user.role !== 'operator') {
       // Для статуса 'paid' проверяем, что пользователь является владельцем заявки
-      if (status === 'paid') {
-        const requestDetails: any = await new Promise((resolve, reject) => {
-          db.get(
-            'SELECT user_id FROM buy_requests WHERE request_id = ?',
-            [requestId],
-            (err, row) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(row);
-              }
-            }
-          );
-        });
-        
-        if (!requestDetails || requestDetails.user_id !== session.user_id) {
-          return NextResponse.json(
-            { error: 'Доступ запрещен' },
-            { status: 403 }
-          );
-        }
+      if (status === 'paid' && requestDetails.user_id !== session.user_id) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        );
       }
       
       // Для статуса 'completed' проверяем, что пользователь является владельцем заявки
-      if (status === 'completed') {
-        const requestDetails: any = await new Promise((resolve, reject) => {
-          db.get(
-            'SELECT user_id FROM buy_requests WHERE request_id = ?',
-            [requestId],
-            (err, row) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(row);
-              }
-            }
-          );
-        });
-        
-        if (!requestDetails || requestDetails.user_id !== session.user_id) {
-          return NextResponse.json(
-            { error: 'Доступ запрещен' },
-            { status: 403 }
-          );
-        }
+      if (status === 'completed' && requestDetails.user_id !== session.user_id) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        );
       }
     } else {
       // Для операторов и админов проверяем другие условия
@@ -334,47 +277,20 @@ export async function PUT(request: Request) {
       }
 
       // Проверка, что заявка не находится в обработке другим оператором
-      if (status === 'processing') {
-        const requestDetails: any = await new Promise((resolve, reject) => {
-          db.get(
-            'SELECT status, operator_id FROM buy_requests WHERE request_id = ?',
-            [requestId],
-            (err, row) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(row);
-              }
-            }
-          );
-        });
-
-        if (requestDetails && requestDetails.status === 'processing' && requestDetails.operator_id !== session.user_id) {
-          return NextResponse.json(
-            { error: 'Заявка уже находится в обработке другим оператором' },
-            { status: 400 }
-          );
-        }
+      if (status === 'processing' && 
+          requestDetails.status === 'processing' && 
+          requestDetails.operator_id && 
+          requestDetails.operator_id !== session.user_id) {
+        return NextResponse.json(
+          { error: 'Заявка уже находится в обработке другим оператором' },
+          { status: 400 }
+        );
       }
 
       // Проверка прав на отмену заявки
       if (status === 'cancelled' && user.role === 'operator') {
         // Оператор может отменить заявку только если он ее обрабатывает
-        const requestDetails: any = await new Promise((resolve, reject) => {
-          db.get(
-            'SELECT operator_id FROM buy_requests WHERE request_id = ?',
-            [requestId],
-            (err, row) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(row);
-              }
-            }
-          );
-        });
-
-        if (requestDetails && requestDetails.operator_id !== session.user_id) {
+        if (requestDetails.operator_id && requestDetails.operator_id !== session.user_id) {
           return NextResponse.json(
             { error: 'Вы можете отменить только ту заявку, которую обрабатываете' },
             { status: 403 }
@@ -384,49 +300,28 @@ export async function PUT(request: Request) {
     }
 
     // Подготовка полей для обновления
-    let updateFields = 'status = ?';
-    let updateParams: any[] = [status];
+    const updateData: any = {
+      status: status
+    };
 
     // Добавляем дополнительные поля при определенных статусах
-    if (status === 'processing' && user.role !== 'admin' && user.role !== 'operator') {
-      // Обычные пользователи не могут установить статус 'processing'
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      );
-    } else if (status === 'processing') {
-      updateFields += ', operator_id = ?, payment_details = ?';
-      updateParams.push(session.user_id);
-      updateParams.push(paymentDetails || '');
+    if (status === 'processing' && (user.role === 'admin' || user.role === 'operator')) {
+      updateData.operator_id = session.user_id;
+      updateData.payment_details = paymentDetails || '';
     } else if (status === 'paid') {
-      updateFields += ', receipt_image = ?';
-      updateParams.push(receiptImage || '');
+      updateData.receipt_image = receiptImage || '';
     } else if (status === 'completed' && transactionHash) {
-      updateFields += ', transaction_hash = ?';
-      updateParams.push(transactionHash);
+      updateData.transaction_hash = transactionHash;
     }
 
-    updateParams.push(requestId);
-
     // Обновление статуса заявки
-    await new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE buy_requests SET ${updateFields}, updated_at = CURRENT_TIMESTAMP WHERE request_id = ?`,
-        updateParams,
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    const updatedRequest = await updateBuyRequest(requestDetails.id, updateData);
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Статус заявки успешно обновлен'
+        message: 'Статус заявки успешно обновлен',
+        request: convertTimestamps(updatedRequest)
       },
       { status: 200 }
     );
@@ -438,6 +333,7 @@ export async function PUT(request: Request) {
     );
   }
 }
+
 // Удаление заявки (только для администраторов или если заявка в статусе pending)
 export async function DELETE(request: Request) {
   try {
@@ -473,21 +369,8 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Проверка, что заявка принадлежит пользователю или пользователь является администратором
-    const requestDetails: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT user_id, status FROM buy_requests WHERE request_id = ?',
-        [requestId],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
-
+    // Получение заявки по requestId
+    const requestDetails: any = await getBuyRequestByRequestId(requestId);
     if (!requestDetails) {
       return NextResponse.json(
         { error: 'Заявка не найдена' },
@@ -495,42 +378,29 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Получение роли пользователя
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
+    // Получение данных пользователя из сессии
+    const user: any = await getUserById(session.user_id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
       );
-    });
+    }
 
     // Проверка прав на удаление
-    if (user.role !== 'admin' && (requestDetails.user_id !== session.user_id || (requestDetails.status !== 'pending' && requestDetails.status !== 'cancelled'))) {
+    if (user.role !== 'admin' && 
+        (requestDetails.user_id !== session.user_id || 
+         (requestDetails.status !== 'pending' && requestDetails.status !== 'cancelled'))) {
       return NextResponse.json(
         { error: 'Доступ запрещен' },
         { status: 403 }
       );
     }
 
-    // Удаление заявки
-    await new Promise((resolve, reject) => {
-      db.run(
-        'DELETE FROM buy_requests WHERE request_id = ?',
-        [requestId],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
+    // Удаление заявки (в Firestore мы не удаляем документы, а помечаем их как удаленные)
+    const updatedRequest = await updateBuyRequest(requestDetails.id, {
+      deleted: true,
+      deleted_at: new Date()
     });
 
     return NextResponse.json(
