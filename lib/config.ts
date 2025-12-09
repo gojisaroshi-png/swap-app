@@ -1,0 +1,1 @@
+export const SIMPLESWAP_API_KEY = "55e3cd77-67a7-4bb4-a37d-5e4b0397a747";

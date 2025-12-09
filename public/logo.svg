@@ -1,0 +1,51 @@
+<svg width="500" height="500" viewBox="0 0 200 200"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <!-- чёткое голубоватое свечение -->
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <!-- базовое размытие -->
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1"/>
+      <!-- усиливаем ореол -->
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2"/>
+
+      <!-- оттеняем в голубой -->
+      <feColorMatrix in="blur2" result="blueTint"
+        type="matrix"
+        values="
+           0 0 0 0 0.40
+           0 0 0 0 0.65
+           0 0 0 0 1.00
+           0 0 0 1 0" />
+
+      <feMerge>
+        <feMergeNode in="blueTint"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g stroke="#ffffff" stroke-width="4" fill="none"
+     filter="url(#glow)" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- Верхний куб -->
+    <path d="M100 40 L130 57 L130 92 L100 110 L70 92 L70 57 Z" />
+    <path d="M100 40 L70 57 L70 92" />
+    <path d="M70 57 L100 75 L130 57" />
+    <path d="M100 75 L100 110" />
+
+    <!-- Левый нижний куб -->
+    <path d="M70 92 L100 110 L100 145 L70 162 L40 145 L40 110 Z" />
+    <path d="M70 92 L40 110 L40 145" />
+    <path d="M40 110 L70 127 L100 110" />
+    <path d="M70 127 L70 162" />
+
+    <!-- Правый нижний куб -->
+    <path d="M130 92 L160 110 L160 145 L130 162 L100 145 L100 110 Z" />
+    <path d="M130 92 L100 110 L100 145" />
+    <path d="M100 110 L130 127 L160 110" />
+    <path d="M130 127 L130 162" />
+
+  </g>
+</svg>
