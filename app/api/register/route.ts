@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/auth';
-import db from '@/lib/db';
+import { getUserByUsername, getUserByEmail, createUser } from '@/lib/firestore-db';
 
 export async function POST(request: Request) {
   try {
@@ -22,22 +22,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Проверка существования пользователя с таким же именем или email
-    const existingUser = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id FROM users WHERE username = ? OR email = ?',
-        [username, email],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    // Проверка существования пользователя с таким же именем или email в Firestore
+    const existingUserByUsername = await getUserByUsername(username);
+    const existingUserByEmail = await getUserByEmail(email);
 
-    if (existingUser) {
+    if (existingUserByUsername || existingUserByEmail) {
       return NextResponse.json(
         { error: 'Пользователь с таким именем или email уже существует' },
         { status: 409 }
@@ -47,26 +36,19 @@ export async function POST(request: Request) {
     // Хэширование пароля
     const hashedPassword = await hashPassword(password);
 
-    // Создание нового пользователя
-    const result: any = await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-        [username, email, hashedPassword, 'user'],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve({ id: this.lastID });
-          }
-        }
-      );
+    // Создание нового пользователя в Firestore
+    const newUser = await createUser({
+      username,
+      email,
+      password: hashedPassword,
+      role: 'user'
     });
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: 'Пользователь успешно зарегистрирован',
-        userId: result.id
+        userId: newUser.id
       },
       { status: 201 }
     );
