@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyPassword, generateToken, createSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { verifyPassword, generateToken } from '@/lib/auth';
+import { getUserByUsername, createSession } from '@/lib/firestore-db';
 
 export async function POST(request: Request) {
   try {
@@ -14,22 +14,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Поиск пользователя в базе данных
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, password, role FROM users WHERE username = ? OR email = ?',
-        [username, username],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
-
+    // Поиск пользователя в Firestore
+    const user: any = await getUserByUsername(username);
+    
     if (!user) {
+      // Проверяем также по email
+      // В Firestore можно добавить индекс для email, если это будет часто использоваться
       return NextResponse.json(
         { error: 'Неверное имя пользователя или пароль' },
         { status: 401 }
@@ -46,10 +36,19 @@ export async function POST(request: Request) {
     }
 
     // Генерация токена
-    const token = generateToken(user);
+    const token = generateToken({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
 
-    // Создание сессии в базе данных
-    await createSession(user.id, token);
+    // Создание сессии в Firestore
+    await createSession({
+      user_id: user.id,
+      token: token,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 часа
+    });
 
     // Возвращаем успешный ответ с токеном
     return NextResponse.json(

@@ -1,19 +1,19 @@
 // Утилиты для работы с аутентификацией (серверные функции)
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import db from './db';
 import { cookies } from 'next/headers';
+import { getUserById, getSessionByToken, deleteSession } from '@/lib/firestore-db';
 
 // Типы для TypeScript
 interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
   role: string;
 }
 
 interface DecodedToken {
-  userId: number;
+  userId: string;
   username: string;
   role: string;
   exp: number;
@@ -21,10 +21,10 @@ interface DecodedToken {
 }
 
 interface Session {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   token: string;
-  expires_at: string;
+  expires_at: Date;
   role: string;
 }
 
@@ -75,67 +75,66 @@ export async function getCurrentUser(): Promise<User | null> {
     const decoded: any = verifyToken(token);
     if (!decoded) return null;
     
-    // Получение пользователя из БД
-    return new Promise((resolve, reject) => {
-      db.get('SELECT id, username, email, role FROM users WHERE id = ?', [decoded.userId], (err, row: User) => {
-        if (err) {
-          reject(null);
-        } else {
-          resolve(row || null);
-        }
-      });
-    });
+    // Получение пользователя из Firestore
+    const userData: any = await getUserById(decoded.userId);
+    if (!userData) return null;
+    
+    // Преобразуем данные пользователя в нужный формат
+    const user: User = {
+      id: userData.id,
+      username: userData.username,
+      email: userData.email,
+      role: userData.role
+    };
+    
+    return user;
   } catch {
     return null;
   }
 }
 
-// Создание сессии в БД
-export async function createSession(userId: number, token: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1); // Токен действует 1 день
+// Создание сессии в Firestore
+export async function createSession(sessionData: any): Promise<void> {
+  try {
+    // Сессия уже создается в login API route
+    // Эта функция может быть удалена или использована для дополнительной логики
+    return Promise.resolve();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+// Проверка сессии через Firestore
+export async function validateSession(token: string): Promise<any | null> {
+  try {
+    // Получаем сессию из Firestore
+    const session: any = await getSessionByToken(token);
     
-    db.run(
-      'INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)',
-      [userId, token, expiresAt.toISOString()],
-      (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      }
-    );
-  });
+    if (!session) {
+      return null;
+    }
+    
+    // Проверяем, не истекла ли сессия
+    const now = new Date();
+    if (session.expires_at.toDate() < now) {
+      // Сессия истекла, удаляем её
+      await deleteSession(token);
+      return null;
+    }
+    
+    return session;
+  } catch (error) {
+    console.error('Session validation error:', error);
+    return null;
+  }
 }
 
-// Проверка сессии
-export async function validateSession(token: string): Promise<Session | null> {
-  return new Promise((resolve, reject) => {
-    db.get(
-      'SELECT s.*, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ? AND s.expires_at > ?',
-      [token, new Date().toISOString()],
-      (err, row: Session) => {
-        if (err) {
-          reject(null);
-        } else {
-          resolve(row || null);
-        }
-      }
-    );
-  });
-}
-
-// Удаление сессии
+// Удаление сессии из Firestore
 export async function removeSession(token: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.run('DELETE FROM sessions WHERE token = ?', [token], (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+  try {
+    await deleteSession(token);
+    return Promise.resolve();
+  } catch (error) {
+    return Promise.reject(error);
+  }
 }

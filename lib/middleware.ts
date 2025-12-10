@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@/lib/auth';
+import { getSessionByToken } from '@/lib/firestore-db';
 
 // Список защищенных маршрутов и их роли
 const protectedRoutes = [
@@ -42,6 +43,26 @@ export async function middleware(request: NextRequest) {
     
     if (!decoded) {
       // Если токен недействителен, перенаправить на страницу входа
+      return NextResponse.redirect(new URL('/auth', request.url));
+    }
+
+    // Проверка сессии в Firestore
+    const session = await getSessionByToken(token);
+    
+    if (!session) {
+      // Если сессия не найдена, перенаправить на страницу входа
+      return NextResponse.redirect(new URL('/auth', request.url));
+    }
+
+    // Проверяем, не истекла ли сессия
+    const now = new Date();
+    // Проверяем, не истекла ли сессия
+    const expiresAt = session.expires_at instanceof Date ? session.expires_at : new Date(session.expires_at.seconds * 1000);
+    if (expiresAt < now) {
+      // Сессия истекла, удаляем её
+      // Удаляем сессию из Firestore
+      const { deleteSession } = await import('@/lib/firestore-db');
+      await deleteSession(token);
       return NextResponse.redirect(new URL('/auth', request.url));
     }
 
