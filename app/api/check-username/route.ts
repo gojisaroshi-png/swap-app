@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getUserByUsername } from '@/lib/firestore-db';
 
 export async function POST(request: Request) {
   try {
@@ -13,26 +13,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Проверка существования пользователя с таким именем
-    const existingUser: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id FROM users WHERE username = ?',
-        [username],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    // Проверка существования пользователя с таким именем в Firestore
+    const existingUser: any = await getUserByUsername(username);
 
     return NextResponse.json(
-      { 
+      {
         exists: !!existingUser,
-        message: existingUser 
-          ? 'Имя пользователя уже занято' 
+        message: existingUser
+          ? 'Имя пользователя уже занято'
           : 'Имя пользователя доступно'
       },
       { status: 200 }
