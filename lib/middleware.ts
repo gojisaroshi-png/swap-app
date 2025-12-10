@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Проверка сессии в Firestore
-    const session = await getSessionByToken(token);
+    const session: any = await getSessionByToken(token);
     
     if (!session) {
       // Если сессия не найдена, перенаправить на страницу входа
@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
     // Проверяем, не истекла ли сессия
     const now = new Date();
     // Проверяем, не истекла ли сессия
-    const expiresAt = session.expires_at instanceof Date ? session.expires_at : new Date(session.expires_at.seconds * 1000);
+    const expiresAt = session.expires_at instanceof Date ? session.expires_at : new Date(session.expires_at);
     if (expiresAt < now) {
       // Сессия истекла, удаляем её
       // Удаляем сессию из Firestore
