@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { SIMPLESWAP_API_KEY } from '@/lib/config';
-import db from '@/lib/db';
+import { getSettings } from '@/lib/firestore-db';
 
 // Получение курсов криптовалют
 export async function GET() {
@@ -19,20 +19,8 @@ export async function GET() {
     
     const priceMap: Record<string, number> = {};
     
-    // Получаем настройки (процент наценки)
-    const settings: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT markup_percentage FROM settings LIMIT 1',
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
-    
+    // Получаем настройки (процент наценки) из Firestore
+    const settings: any = await getSettings();
     const markupPercentage = settings?.markup_percentage || 1.0;
     
     // Получаем курсы для каждого токена относительно USD

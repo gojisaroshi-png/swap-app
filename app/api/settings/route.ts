@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { validateSession } from '@/lib/auth';
-import db from '@/lib/db';
+import { validateSession, getCurrentUser } from '@/lib/auth';
+import { getSettings, updateSettings, getUserById } from '@/lib/firestore-db';
 
 // Получение настроек (только для администраторов)
 export async function GET(request: Request) {
@@ -26,20 +26,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    // Получение данных пользователя из Firestore
+    const user: any = await getUserById(session.user_id);
 
     // Проверка роли пользователя
     if (user.role !== 'admin') {
@@ -49,19 +37,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // Получение настроек
-    const settings: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT * FROM settings LIMIT 1',
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    // Получение настроек из Firestore
+    const settings: any = await getSettings();
 
     return NextResponse.json(
       { settings },
@@ -100,20 +77,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Получение данных пользователя из сессии
-    const user: any = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, role FROM users WHERE id = ?',
-        [session.user_id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row);
-          }
-        }
-      );
-    });
+    // Получение данных пользователя из Firestore
+    const user: any = await getUserById(session.user_id);
 
     // Проверка роли пользователя
     if (user.role !== 'admin') {
@@ -143,23 +108,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Обновление настроек
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE settings SET markup_percentage = ?, updated_at = CURRENT_TIMESTAMP',
-        [markup],
-        (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(null);
-          }
-        }
-      );
-    });
+    // Обновление настроек в Firestore
+    await updateSettings({ markup_percentage: markup });
 
     return NextResponse.json(
-      { 
+      {
         success: true,
         message: 'Настройки успешно обновлены'
       },
