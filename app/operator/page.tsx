@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BottomBar } from '@/components/ui/bottom-bar';
-import { SupportButton } from '@/components/ui/support-button';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { useToast } from '@/hooks/use-toast';
 import { LoliCharacter } from '@/components/ui/loli-character';
@@ -258,17 +257,10 @@ export default function OperatorPage() {
     return (
       <>
         <BottomBar />
-        <SupportButton />
         
         <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
           <div className="absolute inset-0">
-            <FallingPattern
-              color="rgba(139, 92, 246, 0.4)"
-              backgroundColor="rgb(0, 0, 0)"
-              duration={150}
-              blurIntensity="0.5em"
-              density={1}
-            />
+            <FallingPattern />
           </div>
           
           <div className="relative z-10 text-center">
@@ -284,17 +276,10 @@ export default function OperatorPage() {
     return (
       <>
         <BottomBar />
-        <SupportButton />
         
         <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20 mt-16">
           <div className="absolute inset-0">
-            <FallingPattern
-              color="rgba(139, 92, 246, 0.4)"
-              backgroundColor="rgb(0, 0, 0)"
-              duration={150}
-              blurIntensity="0.5em"
-              density={1}
-            />
+            <FallingPattern />
           </div>
           
           <div className="relative z-10 text-center">
@@ -315,21 +300,23 @@ export default function OperatorPage() {
     request.crypto_type.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Разделение заявок на активные и остальные
+  const activeRequests = filteredRequests.filter(request =>
+    request.status === 'pending' || request.status === 'processing' || request.status === 'paid'
+  );
+  const otherRequests = filteredRequests.filter(request =>
+    request.status !== 'pending' && request.status !== 'processing' && request.status !== 'paid'
+  );
+  const sortedRequests = [...activeRequests, ...otherRequests];
+
   return (
     <>
       <BottomBar />
-      <SupportButton />
       
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
         <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(139, 92, 246, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
+          <FallingPattern />
         </div>
         
         {/* Content */}
@@ -381,8 +368,8 @@ export default function OperatorPage() {
                 </h2>
                 
                 <div className="space-y-4">
-                  {filteredRequests.length > 0 ? (
-                    filteredRequests.map((request) => (
+                  {sortedRequests.length > 0 ? (
+                    sortedRequests.map((request) => (
                       <motion.div
                         key={request.request_id}
                         initial={{ opacity: 0, y: 10 }}
@@ -397,7 +384,7 @@ export default function OperatorPage() {
                               Пользователь: {request.user_username}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {request.amount} {request.currency} → {request.crypto_type}
+                              {request.amount} {request.currency} → {request.crypto_amount} {request.crypto_type}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -475,7 +462,7 @@ export default function OperatorPage() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Сумма</p>
-                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency}</p>
+                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency} → {selectedRequest.crypto_amount} {selectedRequest.crypto_type}</p>
                   </div>
                   
                   <div>
@@ -575,32 +562,13 @@ export default function OperatorPage() {
                   )}
                   
                   {selectedRequest.status !== 'completed' && selectedRequest.status !== 'cancelled' && selectedRequest.status !== 'disputed' && selectedRequest.status !== 'processing' && selectedRequest.status !== 'paid' && (
-                    <>
-                      <Button
-                        onClick={() => handleUpdateStatus(selectedRequest.request_id, 'cancelled')}
-                        variant="outline"
-                        className="w-full rounded-xl border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-                      >
-                        Отменить заявку
-                      </Button>
-                      
-                      <div className="space-y-2 pt-2">
-                        <Input
-                          type="text"
-                          placeholder="Причина спора"
-                          value={disputeReason}
-                          onChange={(e) => setDisputeReason(e.target.value)}
-                          className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all"
-                        />
-                        <Button
-                          onClick={() => handleCreateDispute(selectedRequest.request_id)}
-                          variant="outline"
-                          className="w-full rounded-xl border-purple-500/50 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300 transition-all"
-                        >
-                          Открыть спор
-                        </Button>
-                      </div>
-                    </>
+                    <Button
+                      onClick={() => handleUpdateStatus(selectedRequest.request_id, 'cancelled')}
+                      variant="outline"
+                      className="w-full rounded-xl border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                    >
+                      Отменить заявку
+                    </Button>
                   )}
                   
                   <Button

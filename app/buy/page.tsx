@@ -2,7 +2,6 @@
 
 import { getCurrentUser } from '@/lib/auth';
 import { BottomBar } from "@/components/ui/bottom-bar";
-import { SupportButton } from "@/components/ui/support-button";
 import { FallingPattern } from "@/components/ui/falling-pattern";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,9 +18,12 @@ export default function BuyCrypto() {
     BTC: 0,
     ETH: 0,
     USDT: 0,
-    BNB: 0,
     SOL: 0
   });
+
+  const [selectedCryptoType, setSelectedCryptoType] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [calculatedCryptoAmount, setCalculatedCryptoAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -167,7 +169,7 @@ export default function BuyCrypto() {
     // Получение курсов криптовалют
     const fetchPrices = async () => {
       try {
-        const response = await fetch('/api/prices');
+        const response = await fetch('/api/crypto-prices');
         if (response.ok) {
           const data = await response.json();
           setPrices(data.prices);
@@ -201,7 +203,8 @@ export default function BuyCrypto() {
         amount: Number(formData.get('amount')),
         currency: formData.get('currency'),
         paymentMethod: formData.get('paymentMethod'),
-        walletAddress: formData.get('walletAddress')
+        walletAddress: formData.get('walletAddress'),
+        cryptoAmount: 0 // Will be calculated on the server
       };
 
       const response = await fetch('/api/buy-requests', {
@@ -255,16 +258,9 @@ export default function BuyCrypto() {
     return (
       <>
         <BottomBar />
-        <SupportButton />
         <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
           <div className="absolute inset-0">
-            <FallingPattern
-              color="rgba(139, 92, 246, 0.4)"
-              backgroundColor="rgb(0, 0, 0)"
-              duration={150}
-              blurIntensity="0.5em"
-              density={1}
-            />
+            <FallingPattern />
           </div>
           <div className="relative z-10 text-center">
             <p className="text-muted-foreground">Требуется авторизация</p>
@@ -290,18 +286,11 @@ export default function BuyCrypto() {
   return (
     <>
       <BottomBar />
-      <SupportButton />
 
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
         <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(139, 92, 246, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
+          <FallingPattern />
         </div>
 
         {/* Content */}
@@ -319,7 +308,18 @@ export default function BuyCrypto() {
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <div className="space-y-2">
                     <Label htmlFor="cryptoType">Cryptocurrency</Label>
-                    <Select name="cryptoType" required>
+                    <Select
+                      name="cryptoType"
+                      required
+                      onValueChange={(value) => {
+                        setSelectedCryptoType(value);
+                        const amount = parseFloat((document.getElementById('amount') as HTMLInputElement)?.value) || 0;
+                        if (amount > 0 && prices[value]) {
+                          const cryptoAmount = amount / prices[value];
+                          setCalculatedCryptoAmount(cryptoAmount);
+                        }
+                      }}
+                    >
                       <SelectTrigger id="cryptoType">
                         <SelectValue placeholder="Select cryptocurrency" />
                       </SelectTrigger>
@@ -327,26 +327,42 @@ export default function BuyCrypto() {
                         <SelectItem value="BTC">Bitcoin (BTC) - ${prices.BTC?.toFixed(2) || '0.00'}</SelectItem>
                         <SelectItem value="ETH">Ethereum (ETH) - ${prices.ETH?.toFixed(2) || '0.00'}</SelectItem>
                         <SelectItem value="USDT">Tether (USDT) - ${prices.USDT?.toFixed(2) || '0.00'}</SelectItem>
-                        <SelectItem value="BNB">BNB (BNB) - ${prices.BNB?.toFixed(2) || '0.00'}</SelectItem>
                         <SelectItem value="SOL">Solana (SOL) - ${prices.SOL?.toFixed(2) || '0.00'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount">Amount ({selectedCurrency})</Label>
                     <Input
                       id="amount"
                       name="amount"
                       type="number"
                       placeholder="Enter amount"
                       required
+                      onChange={(e) => {
+                        const amount = parseFloat(e.target.value) || 0;
+                        const cryptoType = (document.querySelector('[name="cryptoType"]') as HTMLSelectElement)?.value;
+                        if (cryptoType && prices[cryptoType]) {
+                          const cryptoAmount = amount / prices[cryptoType];
+                          setCalculatedCryptoAmount(cryptoAmount);
+                        }
+                      }}
                     />
+                    {calculatedCryptoAmount > 0 && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        You will receive approximately {calculatedCryptoAmount.toFixed(6)} {selectedCryptoType}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="currency">Currency</Label>
-                    <Select name="currency" required>
+                    <Select
+                      name="currency"
+                      required
+                      onValueChange={(value) => setSelectedCurrency(value)}
+                    >
                       <SelectTrigger id="currency">
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
@@ -366,8 +382,6 @@ export default function BuyCrypto() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="card">Credit Card</SelectItem>
-                        <SelectItem value="paypal">PayPal</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -422,7 +436,7 @@ export default function BuyCrypto() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      {request.amount} {request.currency} → {request.crypto_type}
+                      {request.amount} {request.currency} → {request.crypto_amount} {request.crypto_type}
                     </p>
                     {request.payment_details && (
                       <div className="mt-2 p-2 bg-violet-500/10 rounded-lg">

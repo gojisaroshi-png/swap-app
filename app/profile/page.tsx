@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomBar } from '@/components/ui/bottom-bar';
-import { SupportButton } from '@/components/ui/support-button';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { useToast } from '@/hooks/use-toast';
 import { LoliCharacter } from '@/components/ui/loli-character';
@@ -17,7 +16,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [activeBuyRequest, setActiveBuyRequest] = useState<any>(null);
+  const [buyRequests, setBuyRequests] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +47,7 @@ export default function ProfilePage() {
         
         setUser(data.user);
         setTransactions(data.transactions);
-        setActiveBuyRequest(data.activeBuyRequest);
+        setBuyRequests(data.buyRequests || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -180,19 +179,12 @@ export default function ProfilePage() {
     return (
       <>
         <BottomBar />
-        <SupportButton />
-
+        
         <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
           <div className="absolute inset-0">
-            <FallingPattern
-              color="rgba(139, 92, 246, 0.4)"
-              backgroundColor="rgb(0, 0, 0)"
-              duration={150}
-              blurIntensity="0.5em"
-              density={1}
-            />
+            <FallingPattern />
           </div>
-
+          
           <div className="relative z-10 text-center">
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Loading profile...</h1>
           </div>
@@ -204,20 +196,13 @@ export default function ProfilePage() {
   return (
     <>
       <BottomBar />
-      <SupportButton />
-
+      
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
         <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(139, 92, 246, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
+          <FallingPattern />
         </div>
-
+        
         {/* Hidden file input */}
         <input
           type="file"
@@ -226,7 +211,7 @@ export default function ProfilePage() {
           accept="image/*"
           className="hidden"
         />
-
+        
         {/* Content */}
         <div className="relative z-10 w-full max-w-2xl">
           <motion.div
@@ -242,8 +227,8 @@ export default function ProfilePage() {
                     {/* Аватар пользователя */}
                     <div className="relative">
                       {user?.avatar ? (
-                        <img 
-                          src={user.avatar} 
+                        <img
+                          src={user.avatar}
                           alt="Avatar"
                           className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-violet-500"
                         />
@@ -278,7 +263,7 @@ export default function ProfilePage() {
                     Logout
                   </Button>
                 </div>
-
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="bg-background/40 rounded-2xl p-4 sm:p-6 border border-white/10">
                     <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-4">Information</h2>
@@ -297,24 +282,24 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-
+                  
                   <div className="bg-background/40 rounded-2xl p-4 sm:p-6 border border-white/10">
                     <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-4">Statistics</h2>
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Total Transactions</p>
-                        <p className="font-medium text-lg sm:text-2xl">{transactions.length}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Buy Requests</p>
+                        <p className="font-medium text-lg sm:text-2xl">{buyRequests.length}</p>
                       </div>
                       <div>
                         <p className="text-xs sm:text-sm text-muted-foreground">Completed</p>
                         <p className="font-medium text-lg sm:text-2xl">
-                          {transactions.filter(t => t.status === 'completed').length}
+                          {buyRequests.filter(t => t.status === 'completed').length}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs sm:text-sm text-muted-foreground">In Progress</p>
                         <p className="font-medium text-lg sm:text-2xl">
-                          {transactions.filter(t => t.status === 'pending').length}
+                          {buyRequests.filter(t => t.status === 'pending' || t.status === 'processing' || t.status === 'paid').length}
                         </p>
                       </div>
                     </div>
@@ -322,87 +307,24 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Активная заявка на покупку */}
-            {activeBuyRequest && (
-              <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mb-6">
-                <CardContent className="p-6 sm:p-8">
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                    Active Buy Request
-                  </h2>
-                  <div className="bg-background/40 rounded-2xl p-4 sm:p-6 border border-white/10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-                      <div>
-                        <h3 className="font-semibold text-lg sm:text-xl">Request #{activeBuyRequest.request_id}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {activeBuyRequest.amount} {activeBuyRequest.currency} → {activeBuyRequest.crypto_type}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium mt-2 md:mt-0 ${
-                        activeBuyRequest.status === 'completed'
-                          ? 'bg-green-500/20 text-green-400'
-                          : activeBuyRequest.status === 'processing'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : activeBuyRequest.status === 'paid'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-yellow-500/20 text-yellow-400'
-                      }`}>
-                        {activeBuyRequest.status === 'pending' && 'Pending'}
-                        {activeBuyRequest.status === 'processing' && 'Processing'}
-                        {activeBuyRequest.status === 'paid' && 'Paid'}
-                        {activeBuyRequest.status === 'completed' && 'Completed'}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Payment Method</p>
-                        <p className="font-medium text-sm sm:text-base">{activeBuyRequest.payment_method}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Wallet Address</p>
-                        <p className="font-medium text-sm sm:text-base break-all">{activeBuyRequest.wallet_address}</p>
-                      </div>
-                      {activeBuyRequest.payment_details && (
-                        <div>
-                          <p className="text-xs sm:text-sm text-muted-foreground">Payment Details</p>
-                          <p className="font-medium text-sm sm:text-base break-all">{activeBuyRequest.payment_details}</p>
-                        </div>
-                      )}
-                      {activeBuyRequest.receipt_image && (
-                        <div>
-                          <p className="text-xs sm:text-sm text-muted-foreground">Receipt</p>
-                          <img
-                            src={activeBuyRequest.receipt_image}
-                            alt="Receipt"
-                            className="mt-1 rounded-lg max-w-full h-auto max-h-40 object-contain"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-4">
-                      Created: {activeBuyRequest.created_at ? new Date(activeBuyRequest.created_at).toLocaleString() : 'Not specified'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Транзакции */}
+            
+            
+            {/* История заявок на покупку */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
               <CardContent className="p-6 sm:p-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                  Transaction History
+                  Buy Request History
                 </h2>
-
-                {transactions.length === 0 ? (
+                
+                {buyRequests.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
-                    <p className="text-sm sm:text-base text-muted-foreground">You don't have any transactions yet</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">You don't have any buy requests yet</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {transactions.map((transaction) => (
+                    {buyRequests.map((request) => (
                       <motion.div
-                        key={transaction.id}
+                        key={request.request_id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
@@ -412,32 +334,39 @@ export default function ProfilePage() {
                           <div className="mb-4 md:mb-0">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-mono text-xs sm:text-sm text-muted-foreground">
-                                {transaction.exchange_id}
+                                Request #{request.request_id}
                               </span>
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm sm:text-base">{transaction.amount_from}</span>
-                                <span className="text-xs sm:text-sm">{transaction.from_currency}</span>
+                                <span className="font-bold text-sm sm:text-base">{request.amount}</span>
+                                <span className="text-xs sm:text-sm">{request.currency}</span>
                               </div>
                               <span className="text-muted-foreground">→</span>
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm sm:text-base">{transaction.amount_to}</span>
-                                <span className="text-xs sm:text-sm">{transaction.to_currency}</span>
+                                <span className="font-bold text-sm sm:text-base">{request.crypto_type}</span>
                               </div>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-4">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              transaction.status === 'completed' 
-                                ? 'bg-green-500/20 text-green-400' 
-                                : 'bg-yellow-500/20 text-yellow-400'
+                              request.status === 'completed'
+                                ? 'bg-green-500/20 text-green-400'
+                                : request.status === 'processing'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : request.status === 'paid'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+                                    : 'bg-yellow-500/20 text-yellow-400'
                             }`}>
-                              {transaction.status === 'completed' ? 'Completed' : 'In Progress'}
+                              {request.status === 'pending' && 'Pending'}
+                              {request.status === 'processing' && 'Processing'}
+                              {request.status === 'paid' && 'Paid'}
+                              {request.status === 'completed' && 'Completed'}
+                              {request.status === 'cancelled' && 'Cancelled'}
                             </span>
                             <span className="text-xs sm:text-sm text-muted-foreground">
-                              {transaction.created_at ? new Date(transaction.created_at).toLocaleDateString('en-US') : 'Not specified'}
+                              {request.created_at ? new Date(request.created_at).toLocaleDateString('en-US') : 'Not specified'}
                             </span>
                           </div>
                         </div>

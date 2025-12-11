@@ -2,9 +2,7 @@
 
 import { SwapCard, type Token } from "@/components/ui/swap-card";
 import { useRouter } from "next/navigation";
-import { FallingPattern } from "@/components/ui/falling-pattern";
 import { BottomBar } from "@/components/ui/bottom-bar";
-import { SupportButton } from "@/components/ui/support-button";
 import { useEffect, useState } from "react";
 
 // Define the tokens with their data and icons
@@ -176,20 +174,8 @@ export default function Home() {
   return (
     <>
       <BottomBar />
-      <SupportButton />
 
-      <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-20 pb-8 bg-gradient-to-br from-background to-muted">
-        {/* Falling Pattern Background */}
-        <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(139, 92, 246, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
-        </div>
-
+      <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-20 pb-8 bg-background">
         {/* Content */}
         <div className="relative z-10 w-full max-w-md">
           <SwapCard

@@ -46,22 +46,19 @@ export async function GET(request: Request) {
     // Получение транзакций пользователя
     const transactions = await getTransactionsByUserId(session.user_id);
     
-    // Получение активной заявки на покупку пользователя
+    // Получение всех заявок на покупку пользователя
     const allBuyRequests = await getBuyRequestsByUserId(session.user_id);
-    const activeBuyRequest = allBuyRequests.find((request: any) => 
-      ['pending', 'processing', 'paid'].includes(request.status)
-    ) || null;
 
     // Конвертация timestamp'ов
     const convertedUser = convertTimestamps(user);
     const convertedTransactions = transactions.map((transaction: any) => convertTimestamps(transaction));
-    const convertedActiveBuyRequest = activeBuyRequest ? convertTimestamps(activeBuyRequest) : null;
+    const convertedBuyRequests = allBuyRequests.map((request: any) => convertTimestamps(request));
 
     return NextResponse.json(
       {
         user: convertedUser,
         transactions: convertedTransactions,
-        activeBuyRequest: convertedActiveBuyRequest
+        buyRequests: convertedBuyRequests
       },
       { status: 200 }
     );

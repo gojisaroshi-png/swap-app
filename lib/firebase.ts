@@ -1,16 +1,18 @@
+// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBht0X0ntBSfXmaUPPcDzNCI2PoXLQSA9o",
-  authDomain: "swap-app-bbb7d.firebaseapp.com",
-  projectId: "swap-app-bbb7d",
-  storageBucket: "swap-app-bbb7d.firebasestorage.app",
-  messagingSenderId: "308001868000",
-  appId: "1:308001868000:web:48aa6b758f605a8ea8e885",
-  measurementId: "G-T3HF5YXEGF"
+  apiKey: "AIzaSyBojHdyU_nmKUsQ6FlIu2Umkpc1rmX1Z7Q",
+  authDomain: "blockchain-lavka.firebaseapp.com",
+  projectId: "blockchain-lavka",
+  storageBucket: "blockchain-lavka.firebasestorage.app",
+  messagingSenderId: "207878567702",
+  appId: "1:207878567702:web:5a8bc64a19757d693d8237"
 };
 
 // Initialize Firebase

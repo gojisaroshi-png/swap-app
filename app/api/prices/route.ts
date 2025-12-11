@@ -26,8 +26,27 @@ export async function GET() {
     // Получаем курсы для каждого токена относительно USD
     for (const token of tokens) {
       try {
+        // Получаем курс USDC к USD (должен быть ~1, но получаем из API для точности)
+        const usdcResponse = await fetch(
+          `https://api.simpleswap.io/v3/estimates?api_key=${SIMPLESWAP_API_KEY}&amount=1&tickerFrom=usd&tickerTo=usdc&networkFrom=sol&networkTo=sol`,
+          {
+            headers: {
+              'X-API-KEY': SIMPLESWAP_API_KEY
+            }
+          }
+        );
+        
+        let usdcRate = 1;
+        if (usdcResponse.ok) {
+          const usdcData = await usdcResponse.json();
+          usdcRate = parseFloat(usdcData.result?.estimatedAmount || 1);
+        }
+        
+        console.log(`USDC Rate: 1 USD = ${usdcRate} USDC`);
+        
+        // Получаем курс токена к USD
         const response = await fetch(
-          `https://api.simpleswap.io/v3/estimates?api_key=${SIMPLESWAP_API_KEY}&amount=1&tickerFrom=usdc&tickerTo=${token.symbol.toLowerCase()}&networkFrom=sol&networkTo=${getNetwork(token.symbol)}`,
+          `https://api.simpleswap.io/v3/estimates?api_key=${SIMPLESWAP_API_KEY}&amount=1&tickerFrom=usd&tickerTo=${token.symbol.toLowerCase()}&networkFrom=sol&networkTo=${getNetwork(token.symbol)}`,
           {
             headers: {
               'X-API-KEY': SIMPLESWAP_API_KEY
@@ -39,8 +58,10 @@ export async function GET() {
           const data = await response.json();
           const price = parseFloat(data.result?.estimatedAmount || 0);
           if (!isNaN(price) && price > 0) {
-            // Применяем наценку
-            priceMap[token.symbol] = price * markupPercentage;
+            // Применяем наценку и корректируем по курсу USDC
+            const finalPrice = (1 / price) * usdcRate * markupPercentage;
+            priceMap[token.symbol] = finalPrice;
+            console.log(`Price for ${token.symbol}: 1 USD = ${price} ${token.symbol} => 1 USDC = ${finalPrice} ${token.symbol} (with ${((markupPercentage - 1) * 100).toFixed(0)}% markup)`);
           } else {
             // Используем запасные значения, если API не вернул корректные данные
             const fallbackPrices: Record<string, number> = {
@@ -54,6 +75,7 @@ export async function GET() {
               'USDC': 1
             };
             priceMap[token.symbol] = (fallbackPrices[token.symbol] || 0) * markupPercentage;
+            console.log(`Fallback price used for ${token.symbol}: ${priceMap[token.symbol]}`);
           }
         } else {
           // Используем запасные значения, если API вернул ошибку
@@ -68,6 +90,7 @@ export async function GET() {
             'USDC': 1
           };
           priceMap[token.symbol] = (fallbackPrices[token.symbol] || 0) * markupPercentage;
+          console.log(`Fallback price used for ${token.symbol} due to API error: ${priceMap[token.symbol]}`);
         }
       } catch (error) {
         console.error(`Error fetching price for ${token.symbol}:`, error);
@@ -83,6 +106,7 @@ export async function GET() {
           'USDC': 1
         };
         priceMap[token.symbol] = (fallbackPrices[token.symbol] || 0) * markupPercentage;
+        console.log(`Fallback price used for ${token.symbol} due to exception: ${priceMap[token.symbol]}`);
       }
     }
     

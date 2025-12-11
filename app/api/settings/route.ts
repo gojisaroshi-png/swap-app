@@ -107,9 +107,12 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
-
+    
+    // Преобразуем процент в коэффициент (например, 10% -> 1.10)
+    const markupCoefficient = 1 + (markup / 100);
+    
     // Обновление настроек в Firestore
-    await updateSettings({ markup_percentage: markup });
+    await updateSettings({ markup_percentage: markupCoefficient });
 
     return NextResponse.json(
       {

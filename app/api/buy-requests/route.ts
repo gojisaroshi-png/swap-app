@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     }
 
     // Получение данных из тела запроса
-    const { cryptoType, amount, currency, paymentMethod, walletAddress } = await request.json();
+    const { cryptoType, amount, currency, paymentMethod, walletAddress, cryptoAmount } = await request.json();
 
     // Проверка обязательных полей
     if (!cryptoType || !amount || !currency || !paymentMethod || !walletAddress) {
@@ -125,6 +125,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Получение текущих курсов криптовалют
+    const pricesResponse = await fetch('http://localhost:3000/api/crypto-prices');
+    const pricesData = await pricesResponse.json();
+    const prices = pricesData.prices;
+    
+    // Расчет количества криптовалюты
+    const cryptoPrice = prices[cryptoType];
+    const calculatedCryptoAmount = cryptoPrice ? parseFloat(amount) / cryptoPrice : 0;
+    
     // Создание новой заявки
     const newRequest = await createFirestoreBuyRequest({
       user_id: session.user_id,
@@ -133,6 +142,7 @@ export async function POST(request: Request) {
       currency,
       payment_method: paymentMethod,
       wallet_address: walletAddress,
+      crypto_amount: calculatedCryptoAmount,
       status: 'pending'
     });
 
