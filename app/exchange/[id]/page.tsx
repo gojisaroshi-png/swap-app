@@ -166,13 +166,7 @@ export default function ExchangeDetails({ params }: ExchangeDetailsProps) {
     <div className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-20 pb-8">
       {/* Falling Pattern Background */}
       <div className="absolute inset-0">
-        <FallingPattern
-          color="rgba(149, 76, 233, 0.4)"
-          backgroundColor="rgb(0, 0, 0)"
-          duration={150}
-          blurIntensity="0.5em"
-          density={1}
-        />
+        <FallingPattern />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
