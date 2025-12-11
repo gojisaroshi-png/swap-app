@@ -145,13 +145,7 @@ export default function AuthPage() {
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
         <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(139, 92, 246, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
+          <FallingPattern />
         </div>
 
         {/* Content */}
