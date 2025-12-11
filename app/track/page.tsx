@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/ui/top-bar";
 import { BottomBar } from "@/components/ui/bottom-bar";
-import { SupportButton } from "@/components/ui/support-button";
+// import { SupportButton } from "@/components/ui/support-button";
 import { FallingPattern } from "@/components/ui/falling-pattern";
 
 export default function TrackTransaction() {
@@ -31,18 +31,12 @@ export default function TrackTransaction() {
     <>
       <TopBar />
       <BottomBar />
-      <SupportButton />
+      {/* <SupportButton /> */}
 
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
         <div className="absolute inset-0">
-          <FallingPattern
-            color="rgba(249, 115, 22, 0.4)"
-            backgroundColor="rgb(0, 0, 0)"
-            duration={150}
-            blurIntensity="0.5em"
-            density={1}
-          />
+          <FallingPattern />
         </div>
 
         {/* Content */}
