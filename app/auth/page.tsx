@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BottomBar } from '@/components/ui/bottom-bar';
-import { SupportButton } from '@/components/ui/support-button';
+// import { SupportButton } from '@/components/ui/support-button';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { useToast } from '@/hooks/use-toast';
 
@@ -140,7 +140,7 @@ export default function AuthPage() {
   return (
     <>
       <BottomBar />
-      <SupportButton />
+      {/* <SupportButton /> */}
 
       <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-4 pt-24 pb-20">
         {/* Falling Pattern Background */}
