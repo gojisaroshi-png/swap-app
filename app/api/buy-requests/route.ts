@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     // Получение текущих курсов криптовалют
-    const pricesResponse = await fetch('http://localhost:3000/api/crypto-prices');
+    const pricesResponse = await fetch(`${request.url.split('/').slice(0, -1).join('/')}/crypto-prices`);
     const pricesData = await pricesResponse.json();
     const prices = pricesData.prices;
     
