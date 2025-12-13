@@ -5,7 +5,8 @@ import {
   getTransactionsByUserId,
   getBuyRequestsByUserId,
   updateUser,
-  convertTimestamps
+  convertTimestamps,
+  getUserBalance
 } from '@/lib/firestore-db';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
@@ -48,17 +49,22 @@ export async function GET(request: Request) {
     
     // Получение всех заявок на покупку пользователя
     const allBuyRequests = await getBuyRequestsByUserId(session.user_id);
+    
+    // Получение баланса пользователя
+    const userBalance = await getUserBalance(session.user_id);
 
     // Конвертация timestamp'ов
     const convertedUser = convertTimestamps(user);
     const convertedTransactions = transactions.map((transaction: any) => convertTimestamps(transaction));
     const convertedBuyRequests = allBuyRequests.map((request: any) => convertTimestamps(request));
+    const convertedBalance = convertTimestamps(userBalance);
 
     return NextResponse.json(
       {
         user: convertedUser,
         transactions: convertedTransactions,
-        buyRequests: convertedBuyRequests
+        buyRequests: convertedBuyRequests,
+        balance: convertedBalance
       },
       { status: 200 }
     );

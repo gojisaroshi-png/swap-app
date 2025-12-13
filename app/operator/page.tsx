@@ -17,8 +17,10 @@ export default function OperatorPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<any[]>([]);
+  const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedWithdrawalRequest, setSelectedWithdrawalRequest] = useState<WithdrawalRequest | null>(null);
   const [receiptImage, setReceiptImage] = useState('');
   const [transactionHash, setTransactionHash] = useState('');
   const [disputeReason, setDisputeReason] = useState('');
@@ -72,6 +74,37 @@ export default function OperatorPage() {
     // Очистка интервала при размонтировании компонента
     return () => clearInterval(interval);
   }, [toast, router]);
+  
+  // Получение заявок на вывод при загрузке страницы
+  useEffect(() => {
+    const fetchWithdrawalRequests = async () => {
+      try {
+        const response = await fetch('/api/withdrawal-requests/admin');
+        const data = await response.json();
+        
+        if (response.ok) {
+          setWithdrawalRequests(data.requests);
+        } else {
+          toast({
+            title: 'Ошибка',
+            description: data.error || 'Не удалось загрузить данные заявок на вывод',
+            variant: 'destructive'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching withdrawal requests:', error);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось загрузить данные заявок на вывод',
+          variant: 'destructive'
+        });
+      }
+    };
+    
+    if (!loading && user) {
+      fetchWithdrawalRequests();
+    }
+  }, [loading, user, toast]);
 
   // Функция для получения заявок
   const fetchRequests = async () => {
@@ -217,6 +250,47 @@ export default function OperatorPage() {
     setTransactionHash('');
     setDisputeReason('');
   };
+  
+  // Обработчик обновления статуса заявки на вывод
+  const handleUpdateWithdrawalStatus = async (requestId: string, status: 'processing' | 'completed' | 'cancelled') => {
+    try {
+      const response = await fetch('/api/withdrawal-requests/admin', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, status })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: 'Успех',
+          description: 'Статус заявки на вывод успешно обновлен'
+        });
+        
+        // Обновление статуса заявки в локальном состоянии
+        setWithdrawalRequests(withdrawalRequests.map(request =>
+          request.id === requestId ? { ...request, status } : request
+        ));
+        
+        // Сброс выбранной заявки
+        setSelectedWithdrawalRequest(null);
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось обновить статус заявки на вывод',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при обновлении статуса заявки на вывод',
+        variant: 'destructive'
+      });
+      console.error('Withdrawal request update error:', error);
+    }
+  };
 
   // Обработчик выхода из системы
   const handleLogout = async () => {
@@ -308,6 +382,13 @@ export default function OperatorPage() {
     request.status !== 'pending' && request.status !== 'processing' && request.status !== 'paid'
   );
   const sortedRequests = [...activeRequests, ...otherRequests];
+  
+  // Фильтрация заявок на вывод по поисковому запросу
+  const filteredWithdrawalRequests = withdrawalRequests.filter(request =>
+    request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.crypto_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.wallet_address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -423,6 +504,66 @@ export default function OperatorPage() {
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Заявки не найдены</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Список заявок на вывод */}
+            <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mt-6">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  Заявки на вывод
+                </h2>
+                
+                <div className="space-y-4">
+                  {filteredWithdrawalRequests.length > 0 ? (
+                    filteredWithdrawalRequests.map((request) => (
+                      <motion.div
+                        key={request.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-violet-500/30 transition-all"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold">Заявка #{request.id.substring(0, 8)}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {request.amount} {request.crypto_type} → {request.wallet_address}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              request.status === 'completed'
+                                ? 'bg-green-500/20 text-green-400'
+                                : request.status === 'processing'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : request.status === 'cancelled'
+                                    ? 'bg-red-500/20 text-red-400'
+                                    : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {request.status === 'pending' && 'Ожидает'}
+                              {request.status === 'processing' && 'Обрабатывается'}
+                              {request.status === 'completed' && 'Завершена'}
+                              {request.status === 'cancelled' && 'Отменена'}
+                            </span>
+                            <Button
+                              onClick={() => setSelectedWithdrawalRequest(request)}
+                              variant="outline"
+                              size="sm"
+                              className="rounded-lg border-white/10 hover:bg-white/10"
+                            >
+                              Детали
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Заявки на вывод не найдены</p>
                     </div>
                   )}
                 </div>
@@ -583,7 +724,104 @@ export default function OperatorPage() {
             </motion.div>
           </div>
         )}
+        
+        {/* Модальное окно с деталями заявки на вывод */}
+        {selectedWithdrawalRequest && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-3xl shadow-2xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto"
+            >
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Детали заявки на вывод
+                </h2>
+                
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">ID заявки</p>
+                    <p className="font-medium">#{selectedWithdrawalRequest.id.substring(0, 8)}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Криптовалюта</p>
+                    <p className="font-medium">{selectedWithdrawalRequest.crypto_type}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Сумма</p>
+                    <p className="font-medium">{selectedWithdrawalRequest.amount} {selectedWithdrawalRequest.crypto_type}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Адрес кошелька</p>
+                    <p className="font-medium break-all">{selectedWithdrawalRequest.wallet_address}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Дата создания</p>
+                    <p className="font-medium">{new Date(selectedWithdrawalRequest.created_at).toLocaleString('ru-RU')}</p>
+                  </div>
+                </div>
+                
+                {/* Форма обновления статуса */}
+                <div className="space-y-4">
+                  {selectedWithdrawalRequest.status === 'pending' && (
+                    <div className="space-y-4">
+                      <Button
+                        onClick={() => handleUpdateWithdrawalStatus(selectedWithdrawalRequest.id, 'processing')}
+                        className="w-full rounded-xl py-6 text-lg font-semibold"
+                      >
+                        Начать обработку
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {selectedWithdrawalRequest.status === 'processing' && (
+                    <div className="space-y-4">
+                      <Button
+                        onClick={() => handleUpdateWithdrawalStatus(selectedWithdrawalRequest.id, 'completed')}
+                        className="w-full rounded-xl py-6 text-lg font-semibold"
+                      >
+                        Завершить вывод
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleUpdateWithdrawalStatus(selectedWithdrawalRequest.id, 'cancelled')}
+                        variant="outline"
+                        className="w-full rounded-xl border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                      >
+                        Отменить вывод
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <Button
+                    onClick={() => setSelectedWithdrawalRequest(null)}
+                    variant="outline"
+                    className="w-full rounded-xl border-white/10 hover:bg-white/10"
+                  >
+                    Закрыть
+                  </Button>
+                </div>
+              </CardContent>
+            </motion.div>
+          </div>
+        )}
       </main>
     </>
   );
+}
+
+// Добавляем интерфейс для заявок на вывод
+interface WithdrawalRequest {
+  id: string;
+  user_id: string;
+  crypto_type: string;
+  amount: number;
+  wallet_address: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
 }

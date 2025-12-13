@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+ import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { 
   getAllBuyRequests,
@@ -50,9 +50,9 @@ export async function GET(request: Request) {
       // Для администраторов - все заявки
       requests = await getAllBuyRequests();
     } else if (user.role === 'operator') {
-      // Для операторов - только ожидающие заявки
+      // Для операторов - все заявки, кроме завершенных
       const allRequests = await getAllBuyRequests();
-      requests = allRequests.filter((request: any) => request.status === 'pending');
+      requests = allRequests.filter((request: any) => request.status !== 'completed');
     } else {
       // Для обычных пользователей - только их заявки
       requests = await getBuyRequestsByUserId(session.user_id);
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     const { cryptoType, amount, currency, paymentMethod, walletAddress, cryptoAmount } = await request.json();
 
     // Проверка обязательных полей
-    if (!cryptoType || !amount || !currency || !paymentMethod || !walletAddress) {
+    if (!cryptoType || !amount || !currency || !paymentMethod) {
       return NextResponse.json(
         { error: 'Все поля обязательны для заполнения' },
         { status: 400 }
@@ -141,7 +141,6 @@ export async function POST(request: Request) {
       amount: parseFloat(amount),
       currency,
       payment_method: paymentMethod,
-      wallet_address: walletAddress,
       crypto_amount: calculatedCryptoAmount,
       status: 'pending'
     });
@@ -320,8 +319,13 @@ export async function PUT(request: Request) {
       updateData.payment_details = paymentDetails || '';
     } else if (status === 'paid') {
       updateData.receipt_image = receiptImage || '';
-    } else if (status === 'completed' && transactionHash) {
-      updateData.transaction_hash = transactionHash;
+    } else if (status === 'completed') {
+      if (transactionHash) {
+        updateData.transaction_hash = transactionHash;
+      }
+      // После завершения заявки зачисляем криптовалюту на внутренний баланс пользователя
+      const { updateUserBalance } = await import('@/lib/firestore-db');
+      await updateUserBalance(requestDetails.user_id, requestDetails.crypto_type, requestDetails.crypto_amount);
     }
 
     // Обновление статуса заявки

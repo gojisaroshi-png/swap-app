@@ -23,6 +23,8 @@ export const transactionsCollection = collection(db, 'transactions');
 export const disputesCollection = collection(db, 'disputes');
 export const sessionsCollection = collection(db, 'sessions');
 export const settingsCollection = collection(db, 'settings');
+export const userBalancesCollection = collection(db, 'user_balances'); // Новая коллекция для балансов пользователей
+export const withdrawalRequestsCollection = collection(db, 'withdrawal_requests'); // Новая коллекция для заявок на вывод
 
 // User operations
 export async function createUser(userData: any) {
@@ -267,6 +269,94 @@ export async function updateSettings(settingsData: any) {
   };
   await updateDoc(settingsRef, settingsDataWithTimestamp);
   return { id: settings.id, ...settingsDataWithTimestamp };
+}
+
+// User balance operations
+export async function getUserBalance(userId: string) {
+  const q = query(userBalancesCollection, where('user_id', '==', userId));
+  const querySnapshot = await getDocs(q);
+  
+  if (!querySnapshot.empty) {
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  
+  // Если баланс не найден, создаем новый с нулевыми значениями
+  const newBalance = {
+    user_id: userId,
+    balances: {
+      BTC: 0,
+      ETH: 0,
+      USDT: 0,
+      SOL: 0
+    },
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp()
+  };
+  
+  const balanceRef = doc(userBalancesCollection);
+  await setDoc(balanceRef, newBalance);
+  
+  return { id: balanceRef.id, ...newBalance };
+}
+
+export async function updateUserBalance(userId: string, cryptoType: string, amount: number) {
+  const userBalance: any = await getUserBalance(userId);
+  
+  const updatedBalances = {
+    ...userBalance.balances,
+    [cryptoType]: (userBalance.balances[cryptoType] || 0) + amount
+  };
+  
+  const balanceRef = doc(db, 'user_balances', userBalance.id);
+  await updateDoc(balanceRef, {
+    balances: updatedBalances,
+    updated_at: serverTimestamp()
+  });
+  
+  return { ...userBalance, balances: updatedBalances };
+}
+
+// Withdrawal request operations
+export async function createWithdrawalRequest(requestData: any) {
+  const requestRef = doc(withdrawalRequestsCollection);
+  const requestDataWithTimestamp = {
+    ...requestData,
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+    status: 'pending',
+    id: requestRef.id
+  };
+  await setDoc(requestRef, requestDataWithTimestamp);
+  return { id: requestRef.id, ...requestDataWithTimestamp };
+}
+
+export async function getWithdrawalRequestsByUserId(userId: string) {
+  const q = query(withdrawalRequestsCollection, where('user_id', '==', userId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function getAllWithdrawalRequests() {
+  const querySnapshot = await getDocs(withdrawalRequestsCollection);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+// Функция для получения заявок на вывод по статусу
+export async function getWithdrawalRequestsByStatus(status: string) {
+  const q = query(withdrawalRequestsCollection, where('status', '==', status));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function updateWithdrawalRequest(id: string, requestData: any) {
+  const requestRef = doc(db, 'withdrawal_requests', id);
+  const requestDataWithTimestamp = {
+    ...requestData,
+    updated_at: serverTimestamp()
+  };
+  await updateDoc(requestRef, requestDataWithTimestamp);
+  return { id, ...requestDataWithTimestamp };
 }
 
 // Helper function to convert Firestore timestamps

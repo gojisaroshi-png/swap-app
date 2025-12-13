@@ -169,7 +169,7 @@ export default function BuyCrypto() {
     // Получение курсов криптовалют
     const fetchPrices = async () => {
       try {
-        const response = await fetch('/api/crypto-prices');
+        const response = await fetch(`/api/crypto-prices?currency=${selectedCurrency}`);
         if (response.ok) {
           const data = await response.json();
           setPrices(data.prices);
@@ -183,9 +183,10 @@ export default function BuyCrypto() {
     fetchRequests();
     fetchPrices();
 
-    // Периодическое обновление заявок каждые 10 секунд
+    // Периодическое обновление заявок и курсов каждые 10 секунд
     const interval = setInterval(() => {
       fetchRequests();
+      fetchPrices();
     }, 10000);
 
     // Очистка интервала при размонтировании компонента
@@ -203,7 +204,6 @@ export default function BuyCrypto() {
         amount: Number(formData.get('amount')),
         currency: formData.get('currency'),
         paymentMethod: formData.get('paymentMethod'),
-        walletAddress: formData.get('walletAddress'),
         cryptoAmount: 0 // Will be calculated on the server
       };
 
@@ -244,7 +244,7 @@ export default function BuyCrypto() {
     } catch (error) {
       toast({
         title: "Ошибка",
-        description: "Произошла ошибка при создании заявки",
+        description: "Произошла ошибка при создании заявки: " + (error as Error).message,
         variant: "destructive",
       });
       console.error('Error creating buy request:', error);
@@ -282,6 +282,21 @@ export default function BuyCrypto() {
   
   // Проверка, есть ли у пользователя активная заявка
   const hasActiveRequest = activeRequests.length > 0;
+  
+  // Если есть активные заявки, показываем уведомление
+  if (hasActiveRequest && activeRequests.length > 0) {
+    console.log("У пользователя есть активные заявки:", activeRequests);
+  }
+  
+  // Добавляем проверку на наличие данных пользователя
+  if (!user) {
+    console.log("Данные пользователя не загружены");
+    return null;
+  }
+  
+  console.log("Текущий пользователь:", user);
+  console.log("Активные заявки:", activeRequests);
+  console.log("Завершенные заявки:", completedRequests);
 
   return (
     <>
@@ -297,7 +312,7 @@ export default function BuyCrypto() {
         <div className="relative z-10 w-full max-w-md">
           {/* Форма создания заявки отображается только если нет активных заявок */}
           {activeRequests.length === 0 && (
-            <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl">
+            <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl mx-auto w-full max-w-md">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-bold">Buy Cryptocurrency</CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -324,10 +339,10 @@ export default function BuyCrypto() {
                         <SelectValue placeholder="Select cryptocurrency" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="BTC">Bitcoin (BTC) - ${prices.BTC?.toFixed(2) || '0.00'}</SelectItem>
-                        <SelectItem value="ETH">Ethereum (ETH) - ${prices.ETH?.toFixed(2) || '0.00'}</SelectItem>
-                        <SelectItem value="USDT">Tether (USDT) - ${prices.USDT?.toFixed(2) || '0.00'}</SelectItem>
-                        <SelectItem value="SOL">Solana (SOL) - ${prices.SOL?.toFixed(2) || '0.00'}</SelectItem>
+                        <SelectItem value="BTC">Bitcoin (BTC) - {prices.BTC?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="ETH">Ethereum (ETH) - {prices.ETH?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="USDT">Tether (USDT) - {prices.USDT?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="SOL">Solana (SOL) - {prices.SOL?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -351,7 +366,7 @@ export default function BuyCrypto() {
                     />
                     {calculatedCryptoAmount > 0 && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        You will receive approximately {calculatedCryptoAmount.toFixed(6)} {selectedCryptoType}
+                        You will receive approximately {calculatedCryptoAmount.toFixed(4)} {selectedCryptoType}
                       </p>
                     )}
                   </div>
@@ -361,7 +376,23 @@ export default function BuyCrypto() {
                     <Select
                       name="currency"
                       required
-                      onValueChange={(value) => setSelectedCurrency(value)}
+                      value={selectedCurrency}
+                      onValueChange={(value) => {
+                        setSelectedCurrency(value);
+                        // Обновляем курсы при смене валюты
+                        const fetchPrices = async () => {
+                          try {
+                            const response = await fetch(`/api/crypto-prices?currency=${value}`);
+                            if (response.ok) {
+                              const data = await response.json();
+                              setPrices(data.prices);
+                            }
+                          } catch (error) {
+                            console.error('Error fetching prices:', error);
+                          }
+                        };
+                        fetchPrices();
+                      }}
                     >
                       <SelectTrigger id="currency">
                         <SelectValue placeholder="Select currency" />
@@ -386,16 +417,6 @@ export default function BuyCrypto() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="walletAddress">Wallet Address</Label>
-                    <Input
-                      id="walletAddress"
-                      name="walletAddress"
-                      type="text"
-                      placeholder="Enter your wallet address"
-                      required
-                    />
-                  </div>
 
                   <Button
                     type="submit"
@@ -411,7 +432,7 @@ export default function BuyCrypto() {
 
           {/* Отображение активной заявки */}
           {hasActiveRequest && activeRequests.length > 0 && (
-            <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl mt-6">
+            <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl mt-6 mx-auto w-full max-w-md">
               <CardHeader className="text-center">
                 <CardTitle className="text-xl font-bold">Active Request</CardTitle>
               </CardHeader>
@@ -436,7 +457,7 @@ export default function BuyCrypto() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      {request.amount} {request.currency} → {request.crypto_amount} {request.crypto_type}
+                      {request.amount} {request.currency} → {request.crypto_amount.toFixed(4)} {request.crypto_type}
                     </p>
                     {request.payment_details && (
                       <div className="mt-2 p-2 bg-violet-500/10 rounded-lg">
@@ -474,6 +495,11 @@ export default function BuyCrypto() {
                       >
                         {isSubmitting ? 'Confirming...' : 'Confirm Payment'}
                       </Button>
+                    )}
+                    {request.status === 'paid' && (
+                      <div className="mt-3 p-3 bg-yellow-500/10 rounded-lg text-center">
+                        <p className="text-yellow-300 font-medium">Waiting for operator to send cryptocurrency</p>
+                      </div>
                     )}
                     {request.transaction_hash && (
                       <div className="mt-2 p-2 bg-green-500/10 rounded-lg">
