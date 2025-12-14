@@ -3,10 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function TopBar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("swap");
   const swapRef = useRef<HTMLButtonElement>(null);
   const buyRef = useRef<HTMLButtonElement>(null);
@@ -58,8 +62,14 @@ export function TopBar() {
     }
   };
 
+  // Функция для переключения языка
+  const toggleLanguage = () => {
+    const newLanguage = language === 'en' ? 'ru' : 'en';
+    setLanguage(newLanguage);
+  };
+
   return (
-    <motion.header 
+    <motion.header
       className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/10"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -86,7 +96,7 @@ export function TopBar() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Exchange
+              {t('topbar.exchange')}
             </button>
             <button
               ref={buyRef}
@@ -97,7 +107,7 @@ export function TopBar() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Buy Crypto
+              {t('topbar.buy_crypto')}
             </button>
             <button
               ref={profileRef}
@@ -108,7 +118,7 @@ export function TopBar() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Profile
+              {t('topbar.profile')}
             </button>
           </div>
         </div>

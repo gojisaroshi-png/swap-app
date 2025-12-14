@@ -12,10 +12,15 @@ import { LoliCharacter } from '@/components/ui/loli-character';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t, language } = useTranslation();
+  const { setLanguage } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -275,7 +280,7 @@ export default function ProfilePage() {
           </div>
           
           <div className="relative z-10 text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Loading profile...</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('profile.loading')}</h1>
           </div>
         </main>
       </>
@@ -337,35 +342,49 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-3xl font-bold text-foreground mb-2">
-                          User Profile
+                          {t('profile.title')}
                         </h1>
                         <p className="text-base text-muted-foreground">
-                          Manage your account and transactions
+                          {t('profile.description')}
                         </p>
                       </div>
                     </div>
                     
-                    <Button
-                      onClick={handleLogout}
-                      variant="outline"
-                      className="mt-4 md:mt-0 rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
-                    >
-                      Logout
-                    </Button>
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-1">
+                        <span className="text-sm">EN</span>
+                        <Switch
+                          checked={language === 'ru'}
+                          onCheckedChange={(checked: boolean) => {
+                            const newLanguage = checked ? 'ru' : 'en';
+                            setLanguage(newLanguage);
+                          }}
+                          className="data-[state=checked]:bg-violet-500 data-[state=unchecked]:bg-gray-300"
+                        />
+                        <span className="text-sm">RU</span>
+                      </div>
+                      <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                      >
+                        {t('profile.logout')}
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <p className="text-sm text-muted-foreground">Username</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.username')}</p>
                       <p className="font-medium text-base">{user?.username}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.email')}</p>
                       <p className="font-medium text-base">{user?.email}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Registration Date</p>
-                      <p className="font-medium text-base">{user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US') : 'Not specified'}</p>
+                      <p className="text-sm text-muted-foreground">{t('profile.registration_date')}</p>
+                      <p className="font-medium text-base">{user?.created_at ? new Date(user.created_at).toLocaleDateString(language) : t('profile.not_specified')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -377,7 +396,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                     {/* Балансы криптовалют */}
                     <div className="bg-background/40 rounded-2xl p-4 border border-white/10">
-                      <h3 className="text-lg font-semibold mb-3 text-center">Балансы криптовалют</h3>
+                      <h3 className="text-lg font-semibold mb-3 text-center">{t('profile.crypto_balances')}</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-violet-500/10 rounded-xl">
                           <p className="text-sm text-muted-foreground">BTC</p>
@@ -408,20 +427,20 @@ export default function ProfilePage() {
                     
                     {/* Статистика запросов */}
                     <div className="bg-background/40 rounded-2xl p-4 border border-white/10">
-                      <h3 className="text-lg font-semibold mb-3 text-center">Статистика запросов</h3>
+                      <h3 className="text-lg font-semibold mb-3 text-center">{t('profile.request_statistics')}</h3>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-blue-500/10 rounded-xl">
-                          <span className="text-sm text-muted-foreground">Total Requests</span>
+                          <span className="text-sm text-muted-foreground">{t('profile.total_requests')}</span>
                           <span className="font-bold text-xl">{buyRequests.length}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-xl">
-                          <span className="text-sm text-muted-foreground">Completed</span>
+                          <span className="text-sm text-muted-foreground">{t('profile.completed')}</span>
                           <span className="font-bold text-xl">
                             {buyRequests.filter(t => t.status === 'completed').length}
                           </span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-yellow-500/10 rounded-xl">
-                          <span className="text-sm text-muted-foreground">In Progress</span>
+                          <span className="text-sm text-muted-foreground">{t('profile.in_progress')}</span>
                           <span className="font-bold text-xl">
                             {buyRequests.filter(t => t.status === 'pending' || t.status === 'processing' || t.status === 'paid').length}
                           </span>
@@ -439,36 +458,36 @@ export default function ProfilePage() {
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                    Вывод криптовалюты
+                    {t('profile.withdraw_crypto')}
                   </h2>
                   
                   <form className="space-y-4" onSubmit={handleWithdrawalSubmit}>
                     <div className="space-y-2">
-                      <Label htmlFor="withdrawalCryptoType">Криптовалюта</Label>
+                      <Label htmlFor="withdrawalCryptoType">{t('profile.crypto_currency')}</Label>
                       <Select
                         name="withdrawalCryptoType"
                         required
                         onValueChange={(value) => setWithdrawalCryptoType(value)}
                       >
                         <SelectTrigger id="withdrawalCryptoType">
-                          <SelectValue placeholder="Выберите криптовалюту" />
+                          <SelectValue placeholder={t('profile.select_crypto')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-                          <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-                          <SelectItem value="USDT">Tether (USDT)</SelectItem>
-                          <SelectItem value="SOL">Solana (SOL)</SelectItem>
+                          <SelectItem value="BTC">{t('common.btc')}</SelectItem>
+                          <SelectItem value="ETH">{t('common.eth')}</SelectItem>
+                          <SelectItem value="USDT">{t('common.usdt')}</SelectItem>
+                          <SelectItem value="SOL">{t('common.sol')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="withdrawalAmount">Сумма</Label>
+                      <Label htmlFor="withdrawalAmount">{t('profile.amount')}</Label>
                       <Input
                         id="withdrawalAmount"
                         name="withdrawalAmount"
                         type="number"
-                        placeholder="Введите сумму"
+                        placeholder={t('profile.enter_amount')}
                         required
                         value={withdrawalAmount}
                         onChange={(e) => setWithdrawalAmount(e.target.value)}
@@ -476,12 +495,12 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="withdrawalWalletAddress">Адрес кошелька</Label>
+                      <Label htmlFor="withdrawalWalletAddress">{t('profile.wallet_address')}</Label>
                       <Input
                         id="withdrawalWalletAddress"
                         name="withdrawalWalletAddress"
                         type="text"
-                        placeholder="Введите адрес кошелька"
+                        placeholder={t('profile.enter_wallet_address')}
                         required
                         value={withdrawalWalletAddress}
                         onChange={(e) => setWithdrawalWalletAddress(e.target.value)}
@@ -493,7 +512,7 @@ export default function ProfilePage() {
                       className="w-full rounded-xl py-6 text-lg font-semibold"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Отправка...' : 'Вывести средства'}
+                      {isSubmitting ? 'Отправка...' : t('profile.withdraw_funds')}
                     </Button>
                   </form>
                 </CardContent>
@@ -503,12 +522,12 @@ export default function ProfilePage() {
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6 sm:p-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                    История вывода
+                    {t('profile.withdrawal_history')}
                   </h2>
                   
                   {withdrawalRequests.length === 0 ? (
                     <div className="text-center py-8 sm:py-12">
-                      <p className="text-sm sm:text-base text-muted-foreground">У вас нет заявок на вывод</p>
+                      <p className="text-sm sm:text-base text-muted-foreground">{t('profile.no_withdrawal_requests')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -524,7 +543,7 @@ export default function ProfilePage() {
                             <div className="mb-4 md:mb-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="font-mono text-xs sm:text-sm text-muted-foreground">
-                                 Заявка #{request.id.substring(0, 8)}
+                                 {t('profile.request')} #{request.id.substring(0, 8)}
                                </span>
                              </div>
                              <div className="flex items-center gap-4">
@@ -545,13 +564,13 @@ export default function ProfilePage() {
                                      ? 'bg-red-500/20 text-red-400'
                                      : 'bg-yellow-500/20 text-yellow-400'
                              }`}>
-                               {request.status === 'pending' && 'Ожидает'}
-                               {request.status === 'processing' && 'Обрабатывается'}
-                               {request.status === 'completed' && 'Завершена'}
-                               {request.status === 'cancelled' && 'Отменена'}
+                               {request.status === 'pending' && t('status.pending')}
+                               {request.status === 'processing' && t('status.processing')}
+                               {request.status === 'completed' && t('status.completed')}
+                               {request.status === 'cancelled' && t('status.cancelled')}
                              </span>
                              <span className="text-xs sm:text-sm text-muted-foreground">
-                               {request.created_at ? new Date(request.created_at).toLocaleDateString('ru-RU') : 'Не указана'}
+                               {request.created_at ? new Date(request.created_at).toLocaleDateString(language) : t('profile.not_specified')}
                              </span>
                            </div>
                          </div>
@@ -562,18 +581,18 @@ export default function ProfilePage() {
                </CardContent>
              </Card>
            </div>
-            
-            
+             
+             
             {/* История заявок на покупку */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mt-6">
               <CardContent className="p-6 sm:p-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                  Buy Request History
+                  {t('profile.buy_request_history')}
                 </h2>
                 
                 {buyRequests.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
-                    <p className="text-sm sm:text-base text-muted-foreground">You don't have any buy requests yet</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{t('profile.no_buy_requests')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -589,7 +608,7 @@ export default function ProfilePage() {
                           <div className="mb-4 md:mb-0">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-mono text-xs sm:text-sm text-muted-foreground">
-                                Request #{request.request_id}
+                                {t('profile.request')} #{request.request_id}
                               </span>
                             </div>
                             <div className="flex items-center gap-4">
@@ -614,14 +633,14 @@ export default function ProfilePage() {
                                     ? 'bg-yellow-500/20 text-yellow-400'
                                     : 'bg-yellow-500/20 text-yellow-400'
                             }`}>
-                              {request.status === 'pending' && 'Pending'}
-                              {request.status === 'processing' && 'Processing'}
-                              {request.status === 'paid' && 'Paid'}
-                              {request.status === 'completed' && 'Completed'}
-                              {request.status === 'cancelled' && 'Cancelled'}
+                              {request.status === 'pending' && t('status.pending')}
+                              {request.status === 'processing' && t('status.processing')}
+                              {request.status === 'paid' && t('status.paid')}
+                              {request.status === 'completed' && t('status.completed')}
+                              {request.status === 'cancelled' && t('status.cancelled')}
                             </span>
                             <span className="text-xs sm:text-sm text-muted-foreground">
-                              {request.created_at ? new Date(request.created_at).toLocaleDateString('en-US') : 'Not specified'}
+                              {request.created_at ? new Date(request.created_at).toLocaleDateString(language) : t('profile.not_specified')}
                             </span>
                           </div>
                         </div>

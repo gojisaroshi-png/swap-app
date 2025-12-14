@@ -1,0 +1,247 @@
+// Словари переводов
+export const translations = {
+  en: {
+    // Top Bar
+    'topbar.exchange': 'Exchange',
+    'topbar.buy_crypto': 'Buy Crypto',
+    'topbar.profile': 'Profile',
+    
+    // Profile Page
+    'profile.loading': 'Loading profile...',
+    'profile.title': 'User Profile',
+    'profile.description': 'Manage your account and transactions',
+    'profile.username': 'Username',
+    'profile.email': 'Email',
+    'profile.registration_date': 'Registration Date',
+    'profile.not_specified': 'Not specified',
+    'profile.logout': 'Logout',
+    'profile.crypto_balances': 'Crypto Balances',
+    'profile.request_statistics': 'Request Statistics',
+    'profile.total_requests': 'Total Requests',
+    'profile.completed': 'Completed',
+    'profile.in_progress': 'In Progress',
+    'profile.withdraw_crypto': 'Withdraw Crypto',
+    'profile.crypto_currency': 'Cryptocurrency',
+    'profile.select_crypto': 'Select cryptocurrency',
+    'profile.amount': 'Amount',
+    'profile.enter_amount': 'Enter amount',
+    'profile.wallet_address': 'Wallet Address',
+    'profile.enter_wallet_address': 'Enter wallet address',
+    'profile.withdraw_funds': 'Withdraw Funds',
+    'profile.withdrawal_history': 'Withdrawal History',
+    'profile.no_withdrawal_requests': 'You don\'t have any withdrawal requests',
+    'profile.buy_request_history': 'Buy Request History',
+    'profile.no_buy_requests': 'You don\'t have any buy requests yet',
+    'profile.request': 'Request',
+    
+    // Buy Page
+    'buy.requires_auth': 'Authentication required',
+    'buy.create_request': 'Create a request to buy cryptocurrency',
+    'buy.select_crypto': 'Select cryptocurrency',
+    'buy.amount': 'Amount',
+    'buy.enter_amount': 'Enter amount',
+    'buy.currency': 'Currency',
+    'buy.select_currency': 'Select currency',
+    'buy.payment_method': 'Payment Method',
+    'buy.select_payment_method': 'Select payment method',
+    'buy.create_request_button': 'Create Request',
+    'buy.active_request': 'Active Request',
+    'buy.pending': 'Pending',
+    'buy.processing': 'Processing',
+    'buy.paid': 'Paid',
+    'buy.completed': 'Completed',
+    'buy.payment_details': 'Payment Details',
+    'buy.payment_receipt': 'Payment Receipt',
+    'buy.confirm_payment': 'Confirm Payment',
+    'buy.waiting_operator': 'Waiting for operator to send cryptocurrency',
+    'buy.transaction_hash': 'Transaction Hash',
+    'buy.created': 'Created',
+    
+    // Operator Page
+    'operator.loading': 'Loading operator panel...',
+    'operator.access_denied': 'Access denied',
+    'operator.no_access': 'You don\'t have permission to access this page',
+    'operator.return_home': 'Return to home',
+    'operator.title': 'Operator Panel',
+    'operator.description': 'Processing cryptocurrency purchase requests',
+    'operator.search': 'Search requests...',
+    'operator.buy_requests': 'Buy Requests',
+    'operator.withdrawal_requests': 'Withdrawal Requests',
+    'operator.no_requests': 'No requests found',
+    'operator.withdrawal_no_requests': 'No withdrawal requests found',
+    'operator.request_details': 'Request Details',
+    'operator.request_id': 'Request ID',
+    'operator.user': 'User',
+    'operator.crypto': 'Cryptocurrency',
+    'operator.amount': 'Amount',
+    'operator.payment_method': 'Payment Method',
+    'operator.wallet_address': 'Wallet Address',
+    'operator.bank_transfer': 'Bank Transfer',
+    'operator.card': 'Bank Card',
+    'operator.paypal': 'PayPal',
+    'operator.payment_details': 'Payment Details',
+    'operator.receipt': 'Payment Receipt',
+    'operator.transaction_hash': 'Transaction Hash',
+    'operator.send_details': 'Send Details',
+    'operator.cancel_request': 'Cancel Request',
+    'operator.close': 'Close',
+    'operator.withdrawal_details': 'Withdrawal Request Details',
+    'operator.withdrawal_id': 'Withdrawal ID',
+    'operator.withdrawal_date': 'Creation Date',
+    'operator.start_processing': 'Start Processing',
+    'operator.complete_withdrawal': 'Complete Withdrawal',
+    'operator.cancel_withdrawal': 'Cancel Withdrawal',
+    'operator.withdrawal_amount': 'Amount',
+    
+    // Statuses
+    'status.pending': 'Pending',
+    'status.processing': 'Processing',
+    'status.paid': 'Paid',
+    'status.completed': 'Completed',
+    'status.cancelled': 'Cancelled',
+    'status.disputed': 'Disputed',
+    'status.waiting': 'Waiting',
+    'status.ongoing': 'Ongoing',
+    
+    // Common
+    'common.btc': 'Bitcoin (BTC)',
+    'common.eth': 'Ethereum (ETH)',
+    'common.usdt': 'Tether (USDT)',
+    'common.sol': 'Solana (SOL)',
+    'common.rub': 'RUB',
+    'common.usd': 'USD',
+    'common.eur': 'EUR'
+  },
+  ru: {
+    // Top Bar
+    'topbar.exchange': 'Обмен',
+    'topbar.buy_crypto': 'Купить крипту',
+    'topbar.profile': 'Профиль',
+    
+    // Profile Page
+    'profile.loading': 'Загрузка профиля...',
+    'profile.title': 'Профиль пользователя',
+    'profile.description': 'Управление аккаунтом и транзакциями',
+    'profile.username': 'Имя пользователя',
+    'profile.email': 'Email',
+    'profile.registration_date': 'Дата регистрации',
+    'profile.not_specified': 'Не указана',
+    'profile.logout': 'Выйти',
+    'profile.crypto_balances': 'Балансы криптовалют',
+    'profile.request_statistics': 'Статистика запросов',
+    'profile.total_requests': 'Всего запросов',
+    'profile.completed': 'Завершено',
+    'profile.in_progress': 'В процессе',
+    'profile.withdraw_crypto': 'Вывод криптовалюты',
+    'profile.crypto_currency': 'Криптовалюта',
+    'profile.select_crypto': 'Выберите криптовалюту',
+    'profile.amount': 'Сумма',
+    'profile.enter_amount': 'Введите сумму',
+    'profile.wallet_address': 'Адрес кошелька',
+    'profile.enter_wallet_address': 'Введите адрес кошелька',
+    'profile.withdraw_funds': 'Вывести средства',
+    'profile.withdrawal_history': 'История вывода',
+    'profile.no_withdrawal_requests': 'У вас нет заявок на вывод',
+    'profile.buy_request_history': 'История покупок',
+    'profile.no_buy_requests': 'У вас нет заявок на покупку',
+    'profile.request': 'Заявка',
+    
+    // Buy Page
+    'buy.requires_auth': 'Требуется авторизация',
+    'buy.create_request': 'Создайте заявку на покупку криптовалюты',
+    'buy.select_crypto': 'Выберите криптовалюту',
+    'buy.amount': 'Сумма',
+    'buy.enter_amount': 'Введите сумму',
+    'buy.currency': 'Валюта',
+    'buy.select_currency': 'Выберите валюту',
+    'buy.payment_method': 'Способ оплаты',
+    'buy.select_payment_method': 'Выберите способ оплаты',
+    'buy.create_request_button': 'Создать заявку',
+    'buy.active_request': 'Активная заявка',
+    'buy.pending': 'Ожидает',
+    'buy.processing': 'Обрабатывается',
+    'buy.paid': 'Оплачено',
+    'buy.completed': 'Завершена',
+    'buy.payment_details': 'Реквизиты для оплаты',
+    'buy.payment_receipt': 'Чек оплаты',
+    'buy.confirm_payment': 'Подтвердить оплату',
+    'buy.waiting_operator': 'Ожидание отправки криптовалюты оператором',
+    'buy.transaction_hash': 'Хэш транзакции',
+    'buy.created': 'Создано',
+    
+    // Operator Page
+    'operator.loading': 'Загрузка панели оператора...',
+    'operator.access_denied': 'Доступ запрещен',
+    'operator.no_access': 'У вас нет прав для доступа к этой странице',
+    'operator.return_home': 'Вернуться на главную',
+    'operator.title': 'Панель оператора',
+    'operator.description': 'Обработка заявок на покупку криптовалюты',
+    'operator.search': 'Поиск заявок...',
+    'operator.buy_requests': 'Заявки на покупку',
+    'operator.withdrawal_requests': 'Заявки на вывод',
+    'operator.no_requests': 'Заявки не найдены',
+    'operator.withdrawal_no_requests': 'Заявки на вывод не найдены',
+    'operator.request_details': 'Детали заявки',
+    'operator.request_id': 'ID заявки',
+    'operator.user': 'Пользователь',
+    'operator.crypto': 'Криптовалюта',
+    'operator.amount': 'Сумма',
+    'operator.payment_method': 'Способ оплаты',
+    'operator.wallet_address': 'Адрес кошелька',
+    'operator.bank_transfer': 'Банковский перевод',
+    'operator.card': 'Банковская карта',
+    'operator.paypal': 'PayPal',
+    'operator.payment_details': 'Реквизиты для оплаты',
+    'operator.receipt': 'Чек оплаты',
+    'operator.transaction_hash': 'Хэш транзакции',
+    'operator.send_details': 'Отправить реквизиты',
+    'operator.cancel_request': 'Отменить заявку',
+    'operator.close': 'Закрыть',
+    'operator.withdrawal_details': 'Детали заявки на вывод',
+    'operator.withdrawal_id': 'ID заявки на вывод',
+    'operator.withdrawal_date': 'Дата создания',
+    'operator.start_processing': 'Начать обработку',
+    'operator.complete_withdrawal': 'Завершить вывод',
+    'operator.cancel_withdrawal': 'Отменить вывод',
+    'operator.withdrawal_amount': 'Сумма',
+    
+    // Statuses
+    'status.pending': 'Ожидает',
+    'status.processing': 'Обрабатывается',
+    'status.paid': 'Оплачено',
+    'status.completed': 'Завершена',
+    'status.cancelled': 'Отменена',
+    'status.disputed': 'Спор',
+    'status.waiting': 'Ожидание',
+    'status.ongoing': 'В процессе',
+    
+    // Common
+    'common.btc': 'Bitcoin (BTC)',
+    'common.eth': 'Ethereum (ETH)',
+    'common.usdt': 'Tether (USDT)',
+    'common.sol': 'Solana (SOL)',
+    'common.rub': 'RUB',
+    'common.usd': 'USD',
+    'common.eur': 'EUR'
+  }
+};
+
+// Тип для переводов
+type Translations = {
+  [key: string]: string;
+};
+
+// Функция для получения перевода по ключу
+export function getTranslation(key: string, lang: string): string {
+  const langTranslations = translations[lang as keyof typeof translations] as Translations;
+  return langTranslations?.[key] || key;
+}
+
+// Функция для определения языка браузера
+export function getBrowserLanguage(): string {
+  if (typeof navigator !== 'undefined') {
+    const browserLang = navigator.language.split('-')[0];
+    return browserLang === 'ru' ? 'ru' : 'en';
+  }
+  return 'en';
+}

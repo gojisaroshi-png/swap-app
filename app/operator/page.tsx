@@ -465,7 +465,7 @@ export default function OperatorPage() {
                               Пользователь: {request.user_username}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {request.amount} {request.currency} → {request.crypto_amount} {request.crypto_type}
+                              {request.amount} {request.currency} → {request.crypto_amount.toFixed(4)} {request.crypto_type}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -603,7 +603,7 @@ export default function OperatorPage() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Сумма</p>
-                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency} → {selectedRequest.crypto_amount} {selectedRequest.crypto_type}</p>
+                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency} → {selectedRequest.crypto_amount.toFixed(4)} {selectedRequest.crypto_type}</p>
                   </div>
                   
                   <div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { TopBar } from "@/components/ui/top-bar";
 import { Toaster } from "@/components/ui/toaster";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Blockchain Lavka",
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body style={{ fontFamily: '"Helvetica Neue 65 Medium", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-        <TopBar />
-        {children}
-        <Toaster />
+        <LanguageProvider>
+          <TopBar />
+          <Toaster />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function BuyCrypto() {
+  const { t, language } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({
@@ -22,7 +24,7 @@ export default function BuyCrypto() {
   });
 
   const [selectedCryptoType, setSelectedCryptoType] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState('RUB');
   const [calculatedCryptoAmount, setCalculatedCryptoAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -63,28 +65,28 @@ export default function BuyCrypto() {
             const data = await requestsResponse.json();
             setRequests(data.requests);
             toast({
-              title: "Успешно",
-              description: "Чек успешно загружен",
+              title: t('buy.success'),
+              description: t('buy.receipt_uploaded'),
             });
           }
         } else {
           toast({
-            title: "Ошибка",
-            description: "Не удалось обновить заявку",
+            title: t('buy.error'),
+            description: t('buy.failed_to_update_request'),
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Ошибка",
-          description: result.error || "Не удалось загрузить чек",
+          title: t('buy.error'),
+          description: result.error || t('buy.failed_to_upload_receipt'),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при загрузке чека",
+        title: t('buy.error'),
+        description: t('buy.error_uploading_receipt'),
         variant: "destructive",
       });
       console.error('Error uploading receipt:', error);
@@ -116,21 +118,21 @@ export default function BuyCrypto() {
           const data = await requestsResponse.json();
           setRequests(data.requests);
           toast({
-            title: "Успешно",
-            description: "Оплата подтверждена",
+            title: t('buy.success'),
+            description: t('buy.payment_confirmed'),
           });
         }
       } else {
         toast({
-          title: "Ошибка",
-          description: result.error || "Не удалось подтвердить оплату",
+          title: t('buy.error'),
+          description: result.error || t('buy.failed_to_confirm_payment'),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при подтверждении оплаты",
+        title: t('buy.error'),
+        description: t('buy.error_confirming_payment'),
         variant: "destructive",
       });
       console.error('Error confirming payment:', error);
@@ -169,7 +171,7 @@ export default function BuyCrypto() {
     // Получение курсов криптовалют
     const fetchPrices = async () => {
       try {
-        const response = await fetch(`/api/crypto-prices?currency=${selectedCurrency}`);
+        const response = await fetch(`/api/crypto-prices?currency=RUB`);
         if (response.ok) {
           const data = await response.json();
           setPrices(data.prices);
@@ -187,6 +189,8 @@ export default function BuyCrypto() {
     const interval = setInterval(() => {
       fetchRequests();
       fetchPrices();
+      // Устанавливаем валюту по умолчанию на RUB
+      setSelectedCurrency('RUB');
     }, 10000);
 
     // Очистка интервала при размонтировании компонента
@@ -219,8 +223,8 @@ export default function BuyCrypto() {
 
       if (response.ok) {
         toast({
-          title: "Успешно",
-          description: "Заявка на покупку успешно создана",
+          title: t('buy.success'),
+          description: t('buy.request_created'),
         });
 
         // Очистка формы
@@ -236,15 +240,15 @@ export default function BuyCrypto() {
         }
       } else {
         toast({
-          title: "Ошибка",
-          description: result.error || "Не удалось создать заявку",
+          title: t('buy.error'),
+          description: result.error || t('buy.failed_to_create_request'),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при создании заявки: " + (error as Error).message,
+        title: t('buy.error'),
+        description: t('buy.error_creating_request') + (error as Error).message,
         variant: "destructive",
       });
       console.error('Error creating buy request:', error);
@@ -263,7 +267,7 @@ export default function BuyCrypto() {
             <FallingPattern />
           </div>
           <div className="relative z-10 text-center">
-            <p className="text-muted-foreground">Требуется авторизация</p>
+            <p className="text-muted-foreground">{t('buy.requires_auth')}</p>
           </div>
         </main>
       </>
@@ -314,15 +318,15 @@ export default function BuyCrypto() {
           {activeRequests.length === 0 && (
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl mx-auto w-full max-w-md">
               <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">Buy Cryptocurrency</CardTitle>
+                <CardTitle className="text-2xl font-bold">{t('buy.title')}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Create a request to buy cryptocurrency
+                  {t('buy.create_request')}
                 </p>
               </CardHeader>
               <CardContent className="p-6">
                 <form className="space-y-4" onSubmit={handleSubmit}>
                   <div className="space-y-2">
-                    <Label htmlFor="cryptoType">Cryptocurrency</Label>
+                    <Label htmlFor="cryptoType">{t('buy.select_crypto')}</Label>
                     <Select
                       name="cryptoType"
                       required
@@ -336,24 +340,24 @@ export default function BuyCrypto() {
                       }}
                     >
                       <SelectTrigger id="cryptoType">
-                        <SelectValue placeholder="Select cryptocurrency" />
+                        <SelectValue placeholder={t('buy.select_crypto')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="BTC">Bitcoin (BTC) - {prices.BTC?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
-                        <SelectItem value="ETH">Ethereum (ETH) - {prices.ETH?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
-                        <SelectItem value="USDT">Tether (USDT) - {prices.USDT?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
-                        <SelectItem value="SOL">Solana (SOL) - {prices.SOL?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="BTC">{t('common.btc')} - {prices.BTC?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="ETH">{t('common.eth')} - {prices.ETH?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="USDT">{t('common.usdt')} - {prices.USDT?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
+                        <SelectItem value="SOL">{t('common.sol')} - {prices.SOL?.toFixed(2) || '0.00'} {selectedCurrency}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount ({selectedCurrency})</Label>
+                    <Label htmlFor="amount">{t('buy.amount')} ({selectedCurrency})</Label>
                     <Input
                       id="amount"
                       name="amount"
                       type="number"
-                      placeholder="Enter amount"
+                      placeholder={t('buy.enter_amount')}
                       required
                       onChange={(e) => {
                         const amount = parseFloat(e.target.value) || 0;
@@ -366,13 +370,13 @@ export default function BuyCrypto() {
                     />
                     {calculatedCryptoAmount > 0 && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        You will receive approximately {calculatedCryptoAmount.toFixed(4)} {selectedCryptoType}
+                        {t('buy.you_will_receive')} {calculatedCryptoAmount.toFixed(4)} {selectedCryptoType}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
+                    <Label htmlFor="currency">{t('buy.currency')}</Label>
                     <Select
                       name="currency"
                       required
@@ -382,7 +386,7 @@ export default function BuyCrypto() {
                         // Обновляем курсы при смене валюты
                         const fetchPrices = async () => {
                           try {
-                            const response = await fetch(`/api/crypto-prices?currency=${value}`);
+                            const response = await fetch(`/api/crypto-prices?currency=RUB`);
                             if (response.ok) {
                               const data = await response.json();
                               setPrices(data.prices);
@@ -395,24 +399,22 @@ export default function BuyCrypto() {
                       }}
                     >
                       <SelectTrigger id="currency">
-                        <SelectValue placeholder="Select currency" />
+                        <SelectValue placeholder={t('buy.select_currency')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="RUB">RUB</SelectItem>
+                        <SelectItem value="RUB">{t('common.rub')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
+                    <Label htmlFor="paymentMethod">{t('buy.payment_method')}</Label>
                     <Select name="paymentMethod" required>
                       <SelectTrigger id="paymentMethod">
-                        <SelectValue placeholder="Select payment method" />
+                        <SelectValue placeholder={t('buy.select_payment_method')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="bank_transfer">{t('buy.bank_transfer')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -423,7 +425,7 @@ export default function BuyCrypto() {
                     className="w-full rounded-xl py-6 text-lg font-semibold"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Creating...' : 'Create Request'}
+                    {isSubmitting ? t('buy.creating') : t('buy.create_request_button')}
                   </Button>
                 </form>
               </CardContent>
@@ -434,13 +436,13 @@ export default function BuyCrypto() {
           {hasActiveRequest && activeRequests.length > 0 && (
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card/60 backdrop-blur-xl mt-6 mx-auto w-full max-w-md">
               <CardHeader className="text-center">
-                <CardTitle className="text-xl font-bold">Active Request</CardTitle>
+                <CardTitle className="text-xl font-bold">{t('buy.active_request')}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {activeRequests.map((request) => (
                   <div key={request.request_id} className="bg-background/40 rounded-2xl p-4 border border-white/10 mb-4 last:mb-0">
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-semibold">Request #{request.request_id}</h3>
+                      <h3 className="font-semibold">{t('buy.request')} #{request.request_id}</h3>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         request.status === 'completed'
                           ? 'bg-green-500/20 text-green-400'
@@ -450,10 +452,10 @@ export default function BuyCrypto() {
                               ? 'bg-yellow-500/20 text-yellow-400'
                               : 'bg-yellow-500/20 text-yellow-400'
                       }`}>
-                        {request.status === 'pending' && 'Pending'}
-                        {request.status === 'processing' && 'Processing'}
-                        {request.status === 'paid' && 'Paid'}
-                        {request.status === 'completed' && 'Completed'}
+                        {request.status === 'pending' && t('status.pending')}
+                        {request.status === 'processing' && t('status.processing')}
+                        {request.status === 'paid' && t('status.paid')}
+                        {request.status === 'completed' && t('status.completed')}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
@@ -461,13 +463,13 @@ export default function BuyCrypto() {
                     </p>
                     {request.payment_details && (
                       <div className="mt-2 p-2 bg-violet-500/10 rounded-lg">
-                        <p className="text-sm font-medium text-violet-300">Payment Details:</p>
+                        <p className="text-sm font-medium text-violet-300">{t('buy.payment_details')}:</p>
                         <p className="text-sm break-all">{request.payment_details}</p>
                       </div>
                     )}
                     {request.status === 'processing' && (
                       <div className="mt-3">
-                        <Label htmlFor={`receipt-${request.request_id}`}>Payment Receipt:</Label>
+                        <Label htmlFor={`receipt-${request.request_id}`}>{t('buy.payment_receipt')}:</Label>
                         <Input
                           id={`receipt-${request.request_id}`}
                           type="file"
@@ -477,7 +479,7 @@ export default function BuyCrypto() {
                         />
                         {request.receipt_image && (
                           <div className="mt-2">
-                            <p className="text-sm font-medium text-muted-foreground">Uploaded Receipt:</p>
+                            <p className="text-sm font-medium text-muted-foreground">{t('buy.uploaded_receipt')}:</p>
                             <img
                               src={request.receipt_image}
                               alt="Receipt"
@@ -493,22 +495,22 @@ export default function BuyCrypto() {
                         className="w-full mt-3"
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? 'Confirming...' : 'Confirm Payment'}
+                        {isSubmitting ? t('buy.confirming') : t('buy.confirm_payment')}
                       </Button>
                     )}
                     {request.status === 'paid' && (
                       <div className="mt-3 p-3 bg-yellow-500/10 rounded-lg text-center">
-                        <p className="text-yellow-300 font-medium">Waiting for operator to send cryptocurrency</p>
+                        <p className="text-yellow-300 font-medium">{t('buy.waiting_operator')}</p>
                       </div>
                     )}
                     {request.transaction_hash && (
                       <div className="mt-2 p-2 bg-green-500/10 rounded-lg">
-                        <p className="text-sm font-medium text-green-300">Transaction Hash:</p>
+                        <p className="text-sm font-medium text-green-300">{t('buy.transaction_hash')}:</p>
                         <p className="text-sm break-all">{request.transaction_hash}</p>
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                      Created: {new Date(request.created_at).toLocaleString()}
+                      {t('buy.created')}: {new Date(request.created_at).toLocaleString(language)}
                     </p>
                   </div>
                 ))}
