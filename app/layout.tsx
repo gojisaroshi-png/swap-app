@@ -3,6 +3,7 @@ import "./globals.css";
 import { TopBar } from "@/components/ui/top-bar";
 import { Toaster } from "@/components/ui/toaster";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Blockchain Lavka",
@@ -24,6 +25,7 @@ export default function RootLayout({
           <TopBar />
           <Toaster />
           {children}
+          <Analytics />
         </LanguageProvider>
       </body>
     </html>
