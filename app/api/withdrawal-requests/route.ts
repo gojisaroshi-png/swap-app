@@ -87,8 +87,8 @@ export async function GET(request: Request) {
 
     // Формирование запроса в зависимости от роли пользователя
     if (user.role === 'admin' || user.role === 'operator') {
-      // Для администраторов и операторов - все заявки
-      requests = await getAllWithdrawalRequests();
+      // Для администраторов и операторов - только их заявки в профиле
+      requests = await getWithdrawalRequestsByUserId(session.user_id);
     } else {
       // Для обычных пользователей - только их заявки
       requests = await getWithdrawalRequestsByUserId(session.user_id);

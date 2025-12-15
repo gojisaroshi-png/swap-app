@@ -164,7 +164,16 @@ export default function ProfilePage() {
       const data = await response.json();
       
       if (response.ok) {
-        setWithdrawalRequests(data.requests);
+        // Для обычных пользователей показываем только их заявки
+        // Для админов и операторов также показываем только их заявки в профиле
+        if (user && (user.role === 'admin' || user.role === 'operator')) {
+          // Фильтруем заявки по текущему пользователю
+          const userRequests = data.requests.filter((request: any) => request.user_id === user.id);
+          setWithdrawalRequests(userRequests);
+        } else {
+          // Для обычных пользователей показываем все полученные заявки
+          setWithdrawalRequests(data.requests);
+        }
       } else {
         console.error('Error fetching withdrawal requests:', data.error);
       }

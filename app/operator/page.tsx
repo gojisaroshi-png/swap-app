@@ -783,11 +783,21 @@ export default function OperatorPage() {
                   
                   {selectedWithdrawalRequest.status === 'processing' && (
                     <div className="space-y-4">
+                      <Input
+                        type="text"
+                        placeholder="Хэш транзакции"
+                        value={transactionHash}
+                        onChange={(e) => setTransactionHash(e.target.value)}
+                        className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all"
+                      />
                       <Button
-                        onClick={() => handleUpdateWithdrawalStatus(selectedWithdrawalRequest.id, 'completed')}
+                        onClick={() => {
+                          // Отправляем хэш транзакции и завершаем вывод
+                          handleUpdateWithdrawalStatus(selectedWithdrawalRequest.id, 'completed');
+                        }}
                         className="w-full rounded-xl py-6 text-lg font-semibold"
                       >
-                        Завершить вывод
+                        Отправить хэш транзакции
                       </Button>
                       
                       <Button
