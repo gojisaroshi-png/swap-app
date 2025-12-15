@@ -630,11 +630,14 @@ export default function OperatorPage() {
                   {selectedRequest.receipt_image && (
                     <div>
                       <p className="text-sm text-muted-foreground">Чек оплаты</p>
-                      <img
-                        src={selectedRequest.receipt_image}
-                        alt="Receipt"
-                        className="mt-2 rounded-lg max-w-full h-auto"
-                      />
+                      <a
+                        href={selectedRequest.receipt_image}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline break-all"
+                      >
+                        {selectedRequest.receipt_image}
+                      </a>
                     </div>
                   )}
                   

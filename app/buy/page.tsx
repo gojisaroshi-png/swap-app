@@ -29,57 +29,40 @@ export default function BuyCrypto() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Функция для загрузки чека
-  const handleReceiptUpload = async (requestId: string, file: File | null) => {
-    if (!file) return;
+  // Функция для отправки ссылки на чек
+  const handleReceiptSubmit = async (requestId: string, receiptUrl: string) => {
+    if (!receiptUrl) return;
 
     try {
-      const formData = new FormData();
-      formData.append('receipt', file);
-
-      const response = await fetch('/api/upload-receipt', {
-        method: 'POST',
-        body: formData,
+      // Обновляем заявку с URL чека
+      const updateResponse = await fetch('/api/buy-requests', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId,
+          status: 'paid',
+          receiptImage: receiptUrl
+        }),
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        // Обновляем заявку с URL чека
-        const updateResponse = await fetch('/api/buy-requests', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            requestId,
-            status: 'paid',
-            receiptImage: result.url
-          }),
-        });
-
-        if (updateResponse.ok) {
-          // Обновляем список заявок
-          const requestsResponse = await fetch('/api/buy-requests');
-          if (requestsResponse.ok) {
-            const data = await requestsResponse.json();
-            setRequests(data.requests);
-            toast({
-              title: t('buy.success'),
-              description: t('buy.receipt_uploaded'),
-            });
-          }
-        } else {
+      if (updateResponse.ok) {
+        // Обновляем список заявок
+        const requestsResponse = await fetch('/api/buy-requests');
+        if (requestsResponse.ok) {
+          const data = await requestsResponse.json();
+          setRequests(data.requests);
           toast({
-            title: t('buy.error'),
-            description: t('buy.failed_to_update_request'),
-            variant: "destructive",
+            title: t('buy.success'),
+            description: t('buy.receipt_uploaded'),
           });
         }
       } else {
+        const result = await updateResponse.json();
         toast({
           title: t('buy.error'),
-          description: result.error || t('buy.failed_to_upload_receipt'),
+          description: result.error || t('buy.failed_to_update_request'),
           variant: "destructive",
         });
       }
@@ -89,7 +72,7 @@ export default function BuyCrypto() {
         description: t('buy.error_uploading_receipt'),
         variant: "destructive",
       });
-      console.error('Error uploading receipt:', error);
+      console.error('Error submitting receipt:', error);
     }
   };
 
@@ -474,21 +457,33 @@ export default function BuyCrypto() {
                     {request.status === 'processing' && (
                       <div className="mt-3">
                         <Label htmlFor={`receipt-${request.request_id}`}>{t('buy.payment_receipt')}:</Label>
-                        <Input
-                          id={`receipt-${request.request_id}`}
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleReceiptUpload(request.request_id, e.target.files?.[0] || null)}
-                          className="mt-1"
-                        />
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            id={`receipt-${request.request_id}`}
+                            type="text"
+                            placeholder={t('buy.enter_receipt_url')}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              handleReceiptSubmit(request.request_id, input.value);
+                            }}
+                          >
+                            {t('buy.send')}
+                          </Button>
+                        </div>
                         {request.receipt_image && (
                           <div className="mt-2">
                             <p className="text-sm font-medium text-muted-foreground">{t('buy.uploaded_receipt')}:</p>
-                            <img
-                              src={request.receipt_image}
-                              alt="Receipt"
-                              className="mt-1 rounded-lg max-w-full h-auto max-h-40 object-contain"
-                            />
+                            <a
+                              href={request.receipt_image}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 underline break-all"
+                            >
+                              {request.receipt_image}
+                            </a>
                           </div>
                         )}
                       </div>

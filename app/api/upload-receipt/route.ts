@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
-import fs from 'fs/promises';
-import path from 'path';
 
-// Обработчик POST запроса для загрузки чека
+// Обработчик POST запроса для сохранения ссылки на чек
 export async function POST(request: Request) {
   try {
     // Получение токена из cookies
@@ -30,57 +28,31 @@ export async function POST(request: Request) {
 
     // Получение данных из формы
     const formData = await request.formData();
-    const file = formData.get('receipt') as File | null;
+    const receiptUrl = formData.get('receipt') as string | null;
 
-    if (!file) {
+    if (!receiptUrl) {
       return NextResponse.json(
-        { error: 'Файл не найден' },
+        { error: 'Ссылка не найдена' },
         { status: 400 }
       );
     }
 
-    // Проверка типа файла
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Недопустимый тип файла. Разрешены: JPG, PNG, GIF, PDF' },
-        { status: 400 }
-      );
-    }
-
-    // Проверка размера файла (максимум 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'Файл слишком большой. Максимальный размер 5MB' },
-        { status: 400 }
-      );
-    }
-
-    // Создание директории для загрузок, если она не существует
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    // Проверка, что это действительный URL
     try {
-      await fs.access(uploadDir);
+      new URL(receiptUrl);
     } catch {
-      await fs.mkdir(uploadDir, { recursive: true });
+      return NextResponse.json(
+        { error: 'Недействительная ссылка' },
+        { status: 400 }
+      );
     }
 
-    // Генерация уникального имени файла
-    const fileExtension = path.extname(file.name);
-    const fileName = `${session.user_id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}${fileExtension}`;
-    const filePath = path.join(uploadDir, fileName);
-
-    // Сохранение файла
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    await fs.writeFile(filePath, buffer);
-
-    // Возвращаем URL файла
-    const fileUrl = `/uploads/${fileName}`;
-    return NextResponse.json({ url: fileUrl });
+    // Возвращаем URL как есть
+    return NextResponse.json({ url: receiptUrl });
   } catch (error) {
-    console.error('Receipt upload error:', error);
+    console.error('Receipt URL error:', error);
     return NextResponse.json(
-      { error: 'Ошибка сервера при загрузке чека' },
+      { error: 'Ошибка сервера при обработке ссылки' },
       { status: 500 }
     );
   }
