@@ -435,7 +435,7 @@ export default function OperatorPage() {
               <Input
                 type="text"
                 placeholder="Поиск заявок..."
-                className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all"
+                className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -458,18 +458,18 @@ export default function OperatorPage() {
                         transition={{ duration: 0.3 }}
                         className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-violet-500/30 transition-all"
                       >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Заявка #{request.request_id}</h3>
-                            <p className="text-sm text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold truncate">Заявка #{request.request_id}</h3>
+                            <p className="text-sm text-muted-foreground truncate">
                               Пользователь: {request.user_username}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground truncate">
                               {request.amount} {request.currency} → {request.crypto_amount ? request.crypto_amount.toFixed(4) : '0.0000'} {request.crypto_type}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               request.status === 'completed'
                                 ? 'bg-green-500/20 text-green-400'
                                 : request.status === 'processing'
@@ -493,7 +493,7 @@ export default function OperatorPage() {
                               onClick={() => handleOpenRequest(request)}
                               variant="outline"
                               size="sm"
-                              className="rounded-lg border-white/10 hover:bg-white/10"
+                              className="rounded-lg border-white/10 hover:bg-white/10 whitespace-nowrap"
                             >
                               Детали
                             </Button>
@@ -527,15 +527,15 @@ export default function OperatorPage() {
                         transition={{ duration: 0.3 }}
                         className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-violet-500/30 transition-all"
                       >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-semibold">Заявка #{request.id.substring(0, 8)}</h3>
-                            <p className="text-sm text-muted-foreground">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold truncate">Заявка #{request.id.substring(0, 8)}</h3>
+                            <p className="text-sm text-muted-foreground truncate">
                               {request.amount} {request.crypto_type} → {request.wallet_address}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               request.status === 'completed'
                                 ? 'bg-green-500/20 text-green-400'
                                 : request.status === 'processing'
@@ -553,7 +553,7 @@ export default function OperatorPage() {
                               onClick={() => setSelectedWithdrawalRequest(request)}
                               variant="outline"
                               size="sm"
-                              className="rounded-lg border-white/10 hover:bg-white/10"
+                              className="rounded-lg border-white/10 hover:bg-white/10 whitespace-nowrap"
                             >
                               Детали
                             </Button>
@@ -580,7 +580,7 @@ export default function OperatorPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="bg-card rounded-3xl shadow-2xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto"
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Детали заявки
                 </h2>
@@ -736,7 +736,7 @@ export default function OperatorPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="bg-card rounded-3xl shadow-2xl border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto"
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Детали заявки на вывод
                 </h2>
