@@ -109,8 +109,8 @@ export async function GET(request: Request) {
       for (const token of tokens) {
         // Используем сохраненные курсы, если они есть
         if (savedPrices[token.symbol]) {
-          priceMap[token.symbol] = savedPrices[token.symbol] * markupPercentage;
-          console.log(`Saved price used for ${token.symbol} due to API error: ${priceMap[token.symbol]} RUB`);
+          priceMap[token.symbol] = savedPrices[token.symbol];
+          console.log(`Saved price used for ${token.symbol} due to API error: ${priceMap[token.symbol]} RUB (no additional markup)`);
         } else {
           // Используем запасные значения, если нет сохраненных курсов
           // Конвертируем запасные значения из USD в RUB
@@ -128,8 +128,8 @@ export async function GET(request: Request) {
           // Конвертируем из USD в RUB
           const fallbackPriceUSD = fallbackPricesUSD[token.symbol] || 0;
           const convertedPrice = fallbackPriceUSD / fiatRates.rub;
-          priceMap[token.symbol] = convertedPrice * markupPercentage;
-          console.log(`Fallback price used for ${token.symbol} due to API error: ${priceMap[token.symbol]} RUB`);
+          priceMap[token.symbol] = convertedPrice;
+          console.log(`Fallback price used for ${token.symbol} due to API error: ${priceMap[token.symbol]} RUB (no additional markup)`);
         }
       }
     }

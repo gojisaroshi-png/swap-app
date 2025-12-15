@@ -79,7 +79,7 @@ export default function OperatorPage() {
   useEffect(() => {
     const fetchWithdrawalRequests = async () => {
       try {
-        const response = await fetch('/api/withdrawal-requests/admin');
+        const response = await fetch('/api/withdrawal-requests');
         const data = await response.json();
         
         if (response.ok) {
@@ -254,7 +254,7 @@ export default function OperatorPage() {
   // Обработчик обновления статуса заявки на вывод
   const handleUpdateWithdrawalStatus = async (requestId: string, status: 'processing' | 'completed' | 'cancelled') => {
     try {
-      const response = await fetch('/api/withdrawal-requests/admin', {
+      const response = await fetch('/api/withdrawal-requests', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId, status })
@@ -465,7 +465,7 @@ export default function OperatorPage() {
                               Пользователь: {request.user_username}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {request.amount} {request.currency} → {request.crypto_amount.toFixed(4)} {request.crypto_type}
+                              {request.amount} {request.currency} → {request.crypto_amount ? request.crypto_amount.toFixed(4) : '0.0000'} {request.crypto_type}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -603,7 +603,7 @@ export default function OperatorPage() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Сумма</p>
-                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency} → {selectedRequest.crypto_amount.toFixed(4)} {selectedRequest.crypto_type}</p>
+                    <p className="font-medium">{selectedRequest.amount} {selectedRequest.currency} → {selectedRequest.crypto_amount ? selectedRequest.crypto_amount.toFixed(4) : '0.0000'} {selectedRequest.crypto_type}</p>
                   </div>
                   
                   <div>

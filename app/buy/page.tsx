@@ -161,7 +161,11 @@ export default function BuyCrypto() {
         const response = await fetch('/api/buy-requests');
         if (response.ok) {
           const data = await response.json();
-          setRequests(data.requests);
+          // Фильтруем заявки, оставляя только свои для всех пользователей
+          const userRequests = data.requests.filter((request: any) =>
+            user && request.user_id === user.id
+          );
+          setRequests(userRequests);
         }
       } catch (error) {
         console.error('Error fetching requests:', error);
@@ -195,7 +199,7 @@ export default function BuyCrypto() {
 
     // Очистка интервала при размонтировании компонента
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
