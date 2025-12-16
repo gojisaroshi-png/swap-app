@@ -11,6 +11,25 @@ import { BottomBar } from '@/components/ui/bottom-bar';
 import { FallingPattern } from '@/components/ui/falling-pattern';
 import { useToast } from '@/hooks/use-toast';
 import { LoliCharacter } from '@/components/ui/loli-character';
+import { cn } from "@/lib/utils";
+import * as React from "react";
+
+// Создание текстового поля для текста
+const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"textarea">>(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        className={cn(
+          "flex min-h-[60px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm shadow-black/5 transition-shadow placeholder:text-muted-foreground/70 focus-visible:border-orange-500 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-orange-500/20 disabled:cursor-not-allowed disabled:opacity-50 caret-orange-500",
+          className,
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Textarea.displayName = "Textarea";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -26,6 +45,9 @@ export default function AdminPage() {
   const [disputeSearchTerm, setDisputeSearchTerm] = useState('');
   const [markupPercentage, setMarkupPercentage] = useState(0);
   const [isUpdatingMarkup, setIsUpdatingMarkup] = useState(false);
+  const [faqItems, setFaqItems] = useState<any[]>([]);
+  const [newFaqItem, setNewFaqItem] = useState({ question: '', answer: '' });
+  const [editingFaqItem, setEditingFaqItem] = useState<any>(null);
 
   // Получение данных администратора при загрузке страницы
   useEffect(() => {
@@ -149,6 +171,35 @@ export default function AdminPage() {
 
     fetchAdminData();
   }, [toast, router]);
+
+  // Получение FAQ при загрузке страницы
+  useEffect(() => {
+    const fetchFAQItems = async () => {
+      try {
+        const response = await fetch('/api/faq');
+        const data = await response.json();
+        
+        if (response.ok) {
+          setFaqItems(data.faq || []);
+        } else {
+          toast({
+            title: 'Ошибка',
+            description: data.error || 'Не удалось загрузить FAQ',
+            variant: 'destructive'
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching FAQ items:', error);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось загрузить FAQ',
+          variant: 'destructive'
+        });
+      }
+    };
+
+    fetchFAQItems();
+  }, [toast]);
 
   // Получение настроек при загрузке страницы
   useEffect(() => {
@@ -330,6 +381,140 @@ export default function AdminPage() {
       console.error('Markup update error:', error);
     } finally {
       setIsUpdatingMarkup(false);
+    }
+  };
+
+  // Обработчик создания нового FAQ элемента
+  const handleCreateFaqItem = async () => {
+    if (!newFaqItem.question || !newFaqItem.answer) {
+      toast({
+        title: 'Ошибка',
+        description: 'Вопрос и ответ обязательны для заполнения',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/faq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newFaqItem)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Успех',
+          description: 'FAQ элемент успешно создан'
+        });
+        
+        // Обновление списка FAQ элементов
+        setFaqItems([...faqItems, data.faqItem]);
+        
+        // Очистка формы
+        setNewFaqItem({ question: '', answer: '' });
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось создать FAQ элемент',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при создании FAQ элемента',
+        variant: 'destructive'
+      });
+      console.error('FAQ creation error:', error);
+    }
+  };
+
+  // Обработчик обновления FAQ элемента
+  const handleUpdateFaqItem = async () => {
+    if (!editingFaqItem.question || !editingFaqItem.answer) {
+      toast({
+        title: 'Ошибка',
+        description: 'Вопрос и ответ обязательны для заполнения',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/faq', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingFaqItem)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Успех',
+          description: 'FAQ элемент успешно обновлен'
+        });
+        
+        // Обновление списка FAQ элементов
+        setFaqItems(faqItems.map(item =>
+          item.id === editingFaqItem.id ? data.faqItem : item
+        ));
+        
+        // Сброс редактирования
+        setEditingFaqItem(null);
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось обновить FAQ элемент',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при обновлении FAQ элемента',
+        variant: 'destructive'
+      });
+      console.error('FAQ update error:', error);
+    }
+  };
+
+  // Обработчик удаления FAQ элемента
+  const handleDeleteFaqItem = async (id: string) => {
+    try {
+      const response = await fetch('/api/faq', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Успех',
+          description: 'FAQ элемент успешно удален'
+        });
+        
+        // Обновление списка FAQ элементов
+        setFaqItems(faqItems.filter(item => item.id !== id));
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось удалить FAQ элемент',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при удалении FAQ элемента',
+        variant: 'destructive'
+      });
+      console.error('FAQ deletion error:', error);
     }
   };
 
@@ -567,6 +752,132 @@ export default function AdminPage() {
                     ) : (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">Заявки не найдены</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* FAQ Management */}
+              <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold text-foreground mb-6">
+                    Управление FAQ
+                  </h2>
+                  
+                  {/* Форма создания/редактирования FAQ */}
+                  <div className="mb-6 p-4 bg-background/40 rounded-2xl border border-white/10">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
+                      {editingFaqItem ? 'Редактировать FAQ' : 'Создать новый FAQ элемент'}
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Вопрос
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Введите вопрос"
+                          className="rounded-xl bg-background/40 border-white/10 focus:border-orange-500 transition-all"
+                          value={editingFaqItem ? editingFaqItem.question : newFaqItem.question}
+                          onChange={(e) =>
+                            editingFaqItem
+                              ? setEditingFaqItem({...editingFaqItem, question: e.target.value})
+                              : setNewFaqItem({...newFaqItem, question: e.target.value})
+                          }
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Ответ
+                        </label>
+                        <Textarea
+                          placeholder="Введите ответ"
+                          className="rounded-xl bg-background/40 border-white/10 focus:border-orange-500 transition-all"
+                          value={editingFaqItem ? editingFaqItem.answer : newFaqItem.answer}
+                          onChange={(e) =>
+                            editingFaqItem
+                              ? setEditingFaqItem({...editingFaqItem, answer: e.target.value})
+                              : setNewFaqItem({...newFaqItem, answer: e.target.value})
+                          }
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        {editingFaqItem ? (
+                          <>
+                            <Button
+                              onClick={handleUpdateFaqItem}
+                              className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 transition-all"
+                            >
+                              Обновить
+                            </Button>
+                            <Button
+                              onClick={() => setEditingFaqItem(null)}
+                              variant="outline"
+                              className="rounded-xl border-white/10 text-foreground hover:bg-white/10 px-6 py-2 transition-all"
+                            >
+                              Отмена
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            onClick={handleCreateFaqItem}
+                            className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 transition-all"
+                          >
+                            Создать
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Список FAQ элементов */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Существующие FAQ элементы
+                    </h3>
+                    
+                    {faqItems && faqItems.length > 0 ? (
+                      faqItems.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-foreground">{item.question}</h4>
+                              <p className="text-sm text-muted-foreground mt-2">{item.answer}</p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                onClick={() => setEditingFaqItem(item)}
+                                variant="outline"
+                                size="sm"
+                                className="rounded-lg border-white/10 text-foreground hover:bg-white/10"
+                              >
+                                Редактировать
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteFaqItem(item.id)}
+                                variant="outline"
+                                size="sm"
+                                className="rounded-lg border-red-500/30 text-red-400 hover:bg-red-500/20"
+                              >
+                                Удалить
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">FAQ элементы не найдены</p>
                       </div>
                     )}
                   </div>

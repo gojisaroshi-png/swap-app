@@ -25,6 +25,7 @@ export const sessionsCollection = collection(db, 'sessions');
 export const settingsCollection = collection(db, 'settings');
 export const userBalancesCollection = collection(db, 'user_balances'); // Новая коллекция для балансов пользователей
 export const withdrawalRequestsCollection = collection(db, 'withdrawal_requests'); // Новая коллекция для заявок на вывод
+export const faqCollection = collection(db, 'faq'); // Коллекция для FAQ
 
 // User operations
 export async function createUser(userData: any) {
@@ -372,4 +373,38 @@ export function convertTimestamps(data: any) {
     }
   }
   return converted;
+}
+
+// FAQ operations
+export async function getAllFAQItems() {
+  const querySnapshot = await getDocs(faqCollection);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function createFAQItem(faqData: any) {
+  const faqRef = doc(faqCollection);
+  const faqDataWithTimestamp = {
+    ...faqData,
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+    id: faqRef.id
+  };
+  await setDoc(faqRef, faqDataWithTimestamp);
+  return { id: faqRef.id, ...faqDataWithTimestamp };
+}
+
+export async function updateFAQItem(id: string, faqData: any) {
+  const faqRef = doc(db, 'faq', id);
+  const faqDataWithTimestamp = {
+    ...faqData,
+    updated_at: serverTimestamp()
+  };
+  await updateDoc(faqRef, faqDataWithTimestamp);
+  return { id, ...faqDataWithTimestamp };
+}
+
+export async function deleteFAQItem(id: string) {
+  const faqRef = doc(db, 'faq', id);
+  await deleteDoc(faqRef);
+  return true;
 }

@@ -126,7 +126,13 @@ export const translations = {
     'common.sol': 'Solana (SOL)',
     'common.rub': 'RUB',
     'common.usd': 'USD',
-    'common.eur': 'EUR'
+    'common.eur': 'EUR',
+    
+    // FAQ
+    'faq.title': 'Frequently Asked Questions',
+    'faq.button': 'Help',
+    'faq.loading': 'Loading...',
+    'faq.noItems': 'No FAQ items found'
   },
   ru: {
     // Top Bar
@@ -254,7 +260,13 @@ export const translations = {
     'common.sol': 'Solana (SOL)',
     'common.rub': 'RUB',
     'common.usd': 'USD',
-    'common.eur': 'EUR'
+    'common.eur': 'EUR',
+    
+    // FAQ
+    'faq.title': 'Часто задаваемые вопросы',
+    'faq.button': 'Помощь',
+    'faq.loading': 'Загрузка...',
+    'faq.noItems': 'Элементы FAQ не найдены'
   }
 };
 
