@@ -12,6 +12,7 @@ import { FallingPattern } from '@/components/ui/falling-pattern';
 import { useToast } from '@/hooks/use-toast';
 import { LoliCharacter } from '@/components/ui/loli-character';
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import * as React from "react";
 
 // Создание текстового поля для текста
@@ -48,6 +49,12 @@ export default function AdminPage() {
   const [faqItems, setFaqItems] = useState<any[]>([]);
   const [newFaqItem, setNewFaqItem] = useState({ question: '', answer: '' });
   const [editingFaqItem, setEditingFaqItem] = useState<any>(null);
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [buyRequestStatusFilter, setBuyRequestStatusFilter] = useState<string>('all');
+  const [withdrawalRequestStatusFilter, setWithdrawalRequestStatusFilter] = useState<string>('all');
+  const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
 
   // Получение данных администратора при загрузке страницы
   useEffect(() => {
@@ -75,8 +82,10 @@ export default function AdminPage() {
         setLoading(false);
         
         // Получение данных пользователей
+        setUsersLoading(true);
         const usersResponse = await fetch('/api/users');
         const usersData = await usersResponse.json();
+        setUsersLoading(false);
         
         if (usersResponse.ok) {
           setUsers(usersData.users);
@@ -88,25 +97,11 @@ export default function AdminPage() {
           });
         }
         
-        // Получение транзакций
-        /*
-        const transactionsResponse = await fetch('/api/transactions');
-        const transactionsData = await transactionsResponse.json();
-        
-        if (transactionsResponse.ok) {
-          setTransactions(transactionsData.transactions);
-        } else {
-          toast({
-            title: 'Ошибка',
-            description: transactionsData.error || 'Не удалось загрузить данные транзакций',
-            variant: 'destructive'
-          });
-        }
-        */
-        
         // Получение заявок на покупку
-        const buyRequestsResponse = await fetch('/api/buy-requests');
+        setRequestsLoading(true);
+        const buyRequestsResponse = await fetch('/api/buy-requests' + (buyRequestStatusFilter !== 'all' ? `?status=${buyRequestStatusFilter}` : ''));
         const buyRequestsData = await buyRequestsResponse.json();
+        setRequestsLoading(false);
         
         if (buyRequestsResponse.ok) {
           setBuyRequests(buyRequestsData.requests);
@@ -118,41 +113,19 @@ export default function AdminPage() {
           });
         }
         
-        // Получение споров
-        /*
-        const disputesResponse = await fetch('/api/disputes');
-        const disputesData = await disputesResponse.json();
+        // Получение заявок на вывод
+        const withdrawalRequestsResponse = await fetch('/api/withdrawal-requests' + (withdrawalRequestStatusFilter !== 'all' ? `?status=${withdrawalRequestStatusFilter}` : ''));
+        const withdrawalRequestsData = await withdrawalRequestsResponse.json();
         
-        if (disputesResponse.ok) {
-          setDisputes(disputesData.disputes);
+        if (withdrawalRequestsResponse.ok) {
+          setWithdrawalRequests(withdrawalRequestsData.requests);
         } else {
           toast({
             title: 'Ошибка',
-            description: disputesData.error || 'Не удалось загрузить данные споров',
+            description: withdrawalRequestsData.error || 'Не удалось загрузить данные заявок на вывод',
             variant: 'destructive'
           });
         }
-        */
-        
-        // Расчет статистики
-        /*
-        if (transactionsResponse.ok) {
-          const totalTransactions = transactionsData.transactions.length;
-          const completedTransactions = transactionsData.transactions.filter((t: any) => t.status === 'completed').length;
-          const pendingTransactions = transactionsData.transactions.filter((t: any) => t.status === 'pending').length;
-          // Простая имитация объема транзакций
-          const totalVolume = transactionsData.transactions.reduce((sum: number, t: any) => sum + (t.amount_from || 0), 0);
-          
-          setStats({
-            totalUsers: usersData.users?.length || 0,
-            totalTransactions: totalTransactions || 0,
-            completedTransactions: completedTransactions || 0,
-            pendingTransactions: pendingTransactions || 0,
-            totalVolume: totalVolume || 0,
-            openDisputes: disputesData.disputes?.filter((d: any) => d.status === 'open').length || 0
-          });
-        }
-        */
         
         // Упрощенная статистика без транзакций и споров
         setStats({
@@ -166,15 +139,18 @@ export default function AdminPage() {
           variant: 'destructive'
         });
         setLoading(false);
+        setUsersLoading(false);
+        setRequestsLoading(false);
       }
     };
 
     fetchAdminData();
-  }, [toast, router]);
+  }, [toast, router, buyRequestStatusFilter, withdrawalRequestStatusFilter]);
 
   // Получение FAQ при загрузке страницы
   useEffect(() => {
     const fetchFAQItems = async () => {
+      setFaqLoading(true);
       try {
         const response = await fetch('/api/faq');
         const data = await response.json();
@@ -195,6 +171,8 @@ export default function AdminPage() {
           description: 'Не удалось загрузить FAQ',
           variant: 'destructive'
         });
+      } finally {
+        setFaqLoading(false);
       }
     };
 
@@ -663,40 +641,46 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div className="space-y-4">
-                    {users
-                      .filter(user =>
-                        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
-                      .map((user) => (
-                        <motion.div
-                          key={user.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-semibold">{user.username}</h3>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                  {usersLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="lg" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {users
+                        .filter(user =>
+                          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((user) => (
+                          <motion.div
+                            key={user.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold">{user.username}</h3>
+                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={user.role}
+                                  className="rounded-lg bg-background/40 border border-white/10 px-2 py-1 text-sm"
+                                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                >
+                                  <option value="user">User</option>
+                                  <option value="operator">Operator</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <select
-                                value={user.role}
-                                className="rounded-lg bg-background/40 border border-white/10 px-2 py-1 text-sm"
-                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                              >
-                                <option value="user">User</option>
-                                <option value="operator">Operator</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                  </div>
+                          </motion.div>
+                        ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -707,54 +691,139 @@ export default function AdminPage() {
                     Заявки на покупку
                   </h2>
                   
-                  <div className="space-y-4">
-                    {buyRequests && buyRequests.length > 0 ? (
-                      buyRequests.map((request: any) => (
-                        <motion.div
-                          key={request.request_id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-semibold">Заявка #{request.request_id}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Пользователь: {request.user_username}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {request.amount} {request.currency} → {request.crypto_type}
-                              </p>
+                  {requestsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="lg" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {buyRequests && buyRequests.length > 0 ? (
+                        buyRequests.map((request: any) => (
+                          <motion.div
+                            key={request.request_id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold">Заявка #{request.request_id}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Пользователь: {request.user_username}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {request.amount} {request.currency} → {request.crypto_type}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  request.status === 'completed'
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : request.status === 'processing'
+                                      ? 'bg-blue-500/20 text-blue-400'
+                                      : request.status === 'cancelled'
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : request.status === 'disputed'
+                                          ? 'bg-purple-500/20 text-purple-400'
+                                          : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {request.status === 'pending' && 'Ожидает'}
+                                  {request.status === 'processing' && 'Обрабатывается'}
+                                  {request.status === 'completed' && 'Завершена'}
+                                  {request.status === 'cancelled' && 'Отменена'}
+                                  {request.status === 'disputed' && 'Спор'}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                request.status === 'completed'
-                                  ? 'bg-green-500/20 text-green-400'
-                                  : request.status === 'processing'
-                                    ? 'bg-blue-500/20 text-blue-400'
-                                    : request.status === 'cancelled'
-                                      ? 'bg-red-500/20 text-red-400'
-                                      : request.status === 'disputed'
-                                        ? 'bg-purple-500/20 text-purple-400'
-                                        : 'bg-yellow-500/20 text-yellow-400'
-                              }`}>
-                                {request.status === 'pending' && 'Ожидает'}
-                                {request.status === 'processing' && 'Обрабатывается'}
-                                {request.status === 'completed' && 'Завершена'}
-                                {request.status === 'cancelled' && 'Отменена'}
-                                {request.status === 'disputed' && 'Спор'}
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">Заявки не найдены</p>
-                      </div>
-                    )}
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">Заявки не найдены</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Заявки на вывод */}
+              <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold text-foreground mb-6">
+                    Заявки на вывод
+                  </h2>
+                  
+                  {/* Фильтр по статусу */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Фильтр по статусу
+                    </label>
+                    <select
+                      value={withdrawalRequestStatusFilter}
+                      onChange={(e) => setWithdrawalRequestStatusFilter(e.target.value)}
+                      className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-orange-500 transition-all w-full"
+                    >
+                      <option value="all">Все статусы</option>
+                      <option value="pending">Ожидает</option>
+                      <option value="processing">Обрабатывается</option>
+                      <option value="completed">Завершена</option>
+                      <option value="cancelled">Отменена</option>
+                    </select>
                   </div>
+                  
+                  {requestsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="lg" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {withdrawalRequests && withdrawalRequests.length > 0 ? (
+                        withdrawalRequests.map((request: any) => (
+                          <motion.div
+                            key={request.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold">Заявка #{request.id.substring(0, 8)}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Пользователь: {request.user_username}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {request.amount} {request.crypto_type} → {request.wallet_address}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  request.status === 'completed'
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : request.status === 'processing'
+                                      ? 'bg-blue-500/20 text-blue-400'
+                                      : request.status === 'cancelled'
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {request.status === 'pending' && 'Ожидает'}
+                                  {request.status === 'processing' && 'Обрабатывается'}
+                                  {request.status === 'completed' && 'Завершена'}
+                                  {request.status === 'cancelled' && 'Отменена'}
+                                </span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">Заявки не найдены</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -840,7 +909,11 @@ export default function AdminPage() {
                       Существующие FAQ элементы
                     </h3>
                     
-                    {faqItems && faqItems.length > 0 ? (
+                    {faqLoading ? (
+                      <div className="flex justify-center py-8">
+                        <LoadingSpinner size="lg" />
+                      </div>
+                    ) : faqItems && faqItems.length > 0 ? (
                       faqItems.map((item) => (
                         <motion.div
                           key={item.id}

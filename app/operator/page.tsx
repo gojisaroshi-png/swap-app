@@ -19,6 +19,8 @@ export default function OperatorPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [buyRequestStatusFilter, setBuyRequestStatusFilter] = useState<string>('all');
+  const [withdrawalRequestStatusFilter, setWithdrawalRequestStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [selectedWithdrawalRequest, setSelectedWithdrawalRequest] = useState<WithdrawalRequest | null>(null);
   const [receiptImage, setReceiptImage] = useState('');
@@ -79,7 +81,7 @@ export default function OperatorPage() {
   useEffect(() => {
     const fetchWithdrawalRequests = async () => {
       try {
-        const response = await fetch('/api/withdrawal-requests');
+        const response = await fetch(`/api/withdrawal-requests${withdrawalRequestStatusFilter !== 'all' ? `?status=${withdrawalRequestStatusFilter}` : ''}`);
         const data = await response.json();
         
         if (response.ok) {
@@ -104,12 +106,12 @@ export default function OperatorPage() {
     if (!loading && user) {
       fetchWithdrawalRequests();
     }
-  }, [loading, user, toast]);
+  }, [loading, user, toast, withdrawalRequestStatusFilter]);
 
   // Функция для получения заявок
   const fetchRequests = async () => {
     try {
-      const requestsResponse = await fetch('/api/buy-requests');
+      const requestsResponse = await fetch('/api/buy-requests' + (buyRequestStatusFilter !== 'all' ? `?status=${buyRequestStatusFilter}` : ''));
       const requestsData = await requestsResponse.json();
       
       if (requestsResponse.ok) {
@@ -126,6 +128,31 @@ export default function OperatorPage() {
       toast({
         title: 'Ошибка',
         description: 'Не удалось загрузить данные заявок',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Функция для получения заявок на вывод
+  const fetchWithdrawalRequests = async () => {
+    try {
+      const response = await fetch('/api/withdrawal-requests' + (withdrawalRequestStatusFilter !== 'all' ? `?status=${withdrawalRequestStatusFilter}` : ''));
+      const data = await response.json();
+      
+      if (response.ok) {
+        setWithdrawalRequests(data.requests);
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось загрузить данные заявок на вывод',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching withdrawal requests:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить данные заявок на вывод',
         variant: 'destructive'
       });
     }
@@ -430,15 +457,50 @@ export default function OperatorPage() {
               </Button>
             </div>
             
-            {/* Поиск заявок */}
-            <div className="mb-6">
-              <Input
-                type="text"
-                placeholder="Поиск заявок..."
-                className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            {/* Фильтры */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Поиск заявок */}
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Поиск заявок..."
+                  className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              {/* Фильтр по статусу заявок на покупку */}
+              <div>
+                <select
+                  value={buyRequestStatusFilter}
+                  onChange={(e) => setBuyRequestStatusFilter(e.target.value)}
+                  className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-violet-500 transition-all w-full"
+                >
+                  <option value="all">Все заявки на покупку</option>
+                  <option value="pending">Ожидает</option>
+                  <option value="processing">Обрабатывается</option>
+                  <option value="paid">Оплачено</option>
+                  <option value="completed">Завершена</option>
+                  <option value="cancelled">Отменена</option>
+                  <option value="disputed">Спор</option>
+                </select>
+              </div>
+              
+              {/* Фильтр по статусу заявок на вывод */}
+              <div>
+                <select
+                  value={withdrawalRequestStatusFilter}
+                  onChange={(e) => setWithdrawalRequestStatusFilter(e.target.value)}
+                  className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-violet-500 transition-all w-full"
+                >
+                  <option value="all">Все заявки на вывод</option>
+                  <option value="pending">Ожидает</option>
+                  <option value="processing">Обрабатывается</option>
+                  <option value="completed">Завершена</option>
+                  <option value="cancelled">Отменена</option>
+                </select>
+              </div>
             </div>
             
             {/* Список заявок */}

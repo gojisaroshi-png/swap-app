@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, HelpCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface FAQItem {
   id: string;
@@ -68,8 +69,8 @@ export function FAQModal({ isOpen, onClose }: FAQModalProps) {
           
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-6 text-center">
-                <p>{t('faq.loading')}</p>
+              <div className="p-6 flex justify-center">
+                <LoadingSpinner size="lg" />
               </div>
             ) : faqItems.length === 0 ? (
               <div className="p-6 text-center">

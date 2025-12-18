@@ -43,6 +43,10 @@ export async function GET(request: Request) {
       );
     }
 
+    // Получение параметров запроса
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status');
+
     let requests: any[] = [];
 
     // Формирование запроса в зависимости от роли пользователя
@@ -58,11 +62,16 @@ export async function GET(request: Request) {
       requests = await getBuyRequestsByUserId(session.user_id);
     }
 
+    // Фильтрация по статусу, если указан
+    if (statusFilter) {
+      requests = requests.filter((request: any) => request.status === statusFilter);
+    }
+
     // Конвертация timestamp'ов
     const convertedRequests = requests.map((request: any) => convertTimestamps(request));
 
     return NextResponse.json(
-      { 
+      {
         requests: convertedRequests,
         userRole: user.role
       },

@@ -83,22 +83,31 @@ export async function GET(request: Request) {
       );
     }
 
+    // Получение параметров запроса
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status');
+
     let requests: any[] = [];
 
     // Формирование запроса в зависимости от роли пользователя
     if (user.role === 'admin' || user.role === 'operator') {
-      // Для администраторов и операторов - только их заявки в профиле
-      requests = await getWithdrawalRequestsByUserId(session.user_id);
+      // Для администраторов и операторов - все заявки
+      requests = await getAllWithdrawalRequests();
     } else {
       // Для обычных пользователей - только их заявки
       requests = await getWithdrawalRequestsByUserId(session.user_id);
+    }
+
+    // Фильтрация по статусу, если указан
+    if (statusFilter) {
+      requests = requests.filter((request: any) => request.status === statusFilter);
     }
 
     // Конвертация timestamp'ов
     const convertedRequests = requests.map((request: any) => convertTimestamps(request));
 
     return NextResponse.json(
-      { 
+      {
         requests: convertedRequests,
         userRole: user.role
       },
@@ -171,6 +180,10 @@ export async function POST(request: Request) {
       amount: parseFloat(amount),
       wallet_address: walletAddress
     });
+    
+    // Списание средств с баланса пользователя
+    const { updateUserBalance } = await import('@/lib/firestore-db');
+    await updateUserBalance(session.user_id, cryptoType, -parseFloat(amount));
 
     return NextResponse.json(
       { 

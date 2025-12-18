@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -288,7 +289,8 @@ export default function ProfilePage() {
             <FallingPattern />
           </div>
           
-          <div className="relative z-10 text-center">
+          <div className="relative z-10 flex flex-col items-center">
+            <LoadingSpinner size="lg" className="mb-4" />
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('profile.loading')}</h1>
           </div>
         </main>
@@ -521,7 +523,14 @@ export default function ProfilePage() {
                       className="w-full rounded-xl py-6 text-lg font-semibold"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Отправка...' : t('profile.withdraw_funds')}
+                      {isSubmitting ? (
+                        <div className="flex items-center justify-center">
+                          <LoadingSpinner size="sm" className="mr-2" />
+                          {t('profile.submitting')}
+                        </div>
+                      ) : (
+                        t('profile.withdraw_funds')
+                      )}
                     </Button>
                   </form>
                 </CardContent>
