@@ -32,6 +32,7 @@ export default function ProfilePage() {
   // Состояния для формы вывода средств
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [withdrawalCryptoType, setWithdrawalCryptoType] = useState('');
+  const [usdtNetwork, setUsdtNetwork] = useState(''); // Новое состояние для сети USDT
   const [withdrawalWalletAddress, setWithdrawalWalletAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userBalance, setUserBalance] = useState<any>(null);

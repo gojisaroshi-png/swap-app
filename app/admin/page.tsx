@@ -691,6 +691,26 @@ export default function AdminPage() {
                     Заявки на покупку
                   </h2>
                   
+                  {/* Фильтр по статусу */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Фильтр по статусу
+                    </label>
+                    <select
+                      value={buyRequestStatusFilter}
+                      onChange={(e) => setBuyRequestStatusFilter(e.target.value)}
+                      className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-orange-500 transition-all w-full"
+                    >
+                      <option value="all">Все статусы</option>
+                      <option value="pending">Ожидает</option>
+                      <option value="processing">Обрабатывается</option>
+                      <option value="paid">Оплачено</option>
+                      <option value="completed">Завершена</option>
+                      <option value="cancelled">Отменена</option>
+                      <option value="disputed">Спор</option>
+                    </select>
+                  </div>
+                  
                   {requestsLoading ? (
                     <div className="flex justify-center py-8">
                       <LoadingSpinner size="lg" />

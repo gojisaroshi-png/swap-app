@@ -393,9 +393,10 @@ export default function OperatorPage() {
     );
   }
 
-  // Фильтрация заявок по поисковому запросу (исключаем завершенные заявки для операторов)
+  // Фильтрация заявок по поисковому запросу и статусу
   const filteredRequests = requests.filter(request =>
     (user?.role === 'operator' ? request.status !== 'completed' : true) &&
+    (buyRequestStatusFilter === 'all' || request.status === buyRequestStatusFilter) &&
     (request.request_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (request.user_username && request.user_username.toLowerCase().includes(searchTerm.toLowerCase())) ||
     request.crypto_type.toLowerCase().includes(searchTerm.toLowerCase()))
