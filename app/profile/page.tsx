@@ -207,7 +207,8 @@ export default function ProfilePage() {
         body: JSON.stringify({
           cryptoType: withdrawalCryptoType,
           amount: parseFloat(withdrawalAmount),
-          walletAddress: withdrawalWalletAddress
+          walletAddress: withdrawalWalletAddress,
+          network: withdrawalCryptoType === 'USDT' ? usdtNetwork : undefined
         }),
       });
 
@@ -492,6 +493,27 @@ export default function ProfilePage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {/* Выбор сети для USDT */}
+                    {withdrawalCryptoType === 'USDT' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="usdtNetwork">{t('profile.usdt_network')}</Label>
+                        <Select
+                          name="usdtNetwork"
+                          required
+                          onValueChange={(value) => setUsdtNetwork(value)}
+                        >
+                          <SelectTrigger id="usdtNetwork">
+                            <SelectValue placeholder={t('profile.select_network')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ERC-20">ERC-20 (Ethereum)</SelectItem>
+                            <SelectItem value="TRC-20">TRC-20 (Tron)</SelectItem>
+                            <SelectItem value="SPL">SPL (Solana)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     
                     <div className="space-y-2">
                       <Label htmlFor="withdrawalAmount">{t('profile.amount')}</Label>

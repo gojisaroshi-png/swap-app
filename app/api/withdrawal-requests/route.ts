@@ -10,7 +10,7 @@ import {
 } from '@/lib/firestore-db';
 
 // Функция для валидации адресов криптокошельков
-function isValidWalletAddress(address: string, cryptoType: string): boolean {
+function isValidWalletAddress(address: string, cryptoType: string, network?: string): boolean {
   // Базовая валидация адреса (непустая строка)
   if (!address || typeof address !== 'string' || address.trim().length === 0) {
     return false;
@@ -19,7 +19,7 @@ function isValidWalletAddress(address: string, cryptoType: string): boolean {
   // Удаление пробелов в начале и конце
   const cleanAddress = address.trim();
 
-  // Валидация в зависимости от типа криптовалюты
+  // Валидация в зависимости от типа криптовалюты и сети
   switch (cryptoType.toLowerCase()) {
     case 'btc':
     case 'bitcoin':
@@ -34,8 +34,17 @@ function isValidWalletAddress(address: string, cryptoType: string): boolean {
       // Проверка Solana адреса (32-44 символа, base58)
       return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(cleanAddress);
     case 'usdt':
-      // Для USDT проверяем как Ethereum адрес (ERC-20 токен)
-      return /^0x[a-fA-F0-9]{40}$/.test(cleanAddress);
+      // Для USDT проверка зависит от сети
+      if (network === 'TRC-20') {
+        // TRC-20 адреса (начинаются с T)
+        return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(cleanAddress);
+      } else if (network === 'SPL') {
+        // SPL адреса (Solana)
+        return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(cleanAddress);
+      } else {
+        // По умолчанию ERC-20 (Ethereum)
+        return /^0x[a-fA-F0-9]{40}$/.test(cleanAddress);
+      }
     case 'xmr':
     case 'monero':
       // Проверка Monero адреса (95 символов, начинается с 4)
@@ -147,7 +156,7 @@ export async function POST(request: Request) {
     }
 
     // Получение данных из тела запроса
-    const { cryptoType, amount, walletAddress } = await request.json();
+    const { cryptoType, amount, walletAddress, network } = await request.json();
 
     // Проверка обязательных полей
     if (!cryptoType || !amount || !walletAddress) {
@@ -158,7 +167,7 @@ export async function POST(request: Request) {
     }
 
     // Валидация адреса криптокошелька
-    if (!isValidWalletAddress(walletAddress, cryptoType)) {
+    if (!isValidWalletAddress(walletAddress, cryptoType, network)) {
       return NextResponse.json(
         { error: 'Некорректный адрес криптокошелька' },
         { status: 400 }
@@ -178,7 +187,8 @@ export async function POST(request: Request) {
       user_id: session.user_id,
       crypto_type: cryptoType,
       amount: parseFloat(amount),
-      wallet_address: walletAddress
+      wallet_address: walletAddress,
+      network: network // Добавляем сеть в данные заявки
     });
     
     // Списание средств с баланса пользователя

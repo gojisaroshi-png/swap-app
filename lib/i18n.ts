@@ -33,6 +33,8 @@ export const translations = {
     'profile.buy_request_history': 'Buy Request History',
     'profile.no_buy_requests': 'You don\'t have any buy requests yet',
     'profile.request': 'Request',
+    'profile.usdt_network': 'USDT Network',
+    'profile.select_network': 'Select network',
     
     // Buy Page
     'buy.requires_auth': 'Authentication required',
@@ -167,6 +169,8 @@ export const translations = {
     'profile.buy_request_history': 'История покупок',
     'profile.no_buy_requests': 'У вас нет заявок на покупку',
     'profile.request': 'Заявка',
+    'profile.usdt_network': 'Сеть USDT',
+    'profile.select_network': 'Выберите сеть',
     
     // Buy Page
     'buy.requires_auth': 'Требуется авторизация',
