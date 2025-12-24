@@ -687,9 +687,17 @@ export default function AdminPage() {
               {/* Заявки на покупку */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Заявки на покупку
-                  </h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Заявки на покупку
+                    </h2>
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/purchases')}
+                    >
+                      Показать все
+                    </Button>
+                  </div>
                   
                   {/* Фильтр по статусу */}
                   <div className="mb-6">
@@ -771,9 +779,17 @@ export default function AdminPage() {
               {/* Заявки на вывод */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Заявки на вывод
-                  </h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Заявки на вывод
+                    </h2>
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/withdrawals')}
+                    >
+                      Показать все
+                    </Button>
+                  </div>
                   
                   {/* Фильтр по статусу */}
                   <div className="mb-6">

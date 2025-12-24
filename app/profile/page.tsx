@@ -37,6 +37,33 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userBalance, setUserBalance] = useState<any>(null);
   const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
+  const [showAllWithdrawals, setShowAllWithdrawals] = useState(false);
+
+  // Функция для получения ограниченного списка заявок на вывод (только последние 3)
+  const getLimitedWithdrawalRequests = () => {
+    // Сортировка по дате (новые первые)
+    const sorted = [...withdrawalRequests].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    
+    // Ограничение до 3 последних
+    return sorted.slice(0, 3);
+  };
+
+  // Функция для получения ограниченного списка заявок на покупку (только последние 3)
+  const getLimitedBuyRequests = () => {
+    // Сортировка по дате (новые первые)
+    const sorted = [...buyRequests].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    
+    // Ограничение до 3 последних
+    return sorted.slice(0, 3);
+  };
+
+  // Получаем ограниченный список заявок
+  const limitedWithdrawalRequests = getLimitedWithdrawalRequests();
+  const limitedBuyRequests = getLimitedBuyRequests();
 
   // Получение данных пользователя при загрузке страницы
   useEffect(() => {
@@ -566,13 +593,24 @@ export default function ProfilePage() {
                     {t('profile.withdrawal_history')}
                   </h2>
                   
+                  {/* Фильтры и сортировка */}
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {/* Кнопка для перехода на страницу всех выводов */}
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push('/withdrawals')}
+                    >
+                      {t('profile.show_all')}
+                    </Button>
+                  </div>
+                  
                   {withdrawalRequests.length === 0 ? (
                     <div className="text-center py-8 sm:py-12">
                       <p className="text-sm sm:text-base text-muted-foreground">{t('profile.no_withdrawal_requests')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {withdrawalRequests.map((request) => (
+                      {limitedWithdrawalRequests.map((request: any) => (
                         <motion.div
                           key={request.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -627,9 +665,18 @@ export default function ProfilePage() {
             {/* История заявок на покупку */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mt-6">
               <CardContent className="p-6 sm:p-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                  {t('profile.buy_request_history')}
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                    {t('profile.buy_request_history')}
+                  </h2>
+                  {/* Кнопка для перехода на страницу всех покупок */}
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/purchases')}
+                  >
+                    {t('profile.show_all')}
+                  </Button>
+                </div>
                 
                 {buyRequests.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
@@ -637,7 +684,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {buyRequests.map((request) => (
+                    {limitedBuyRequests.map((request) => (
                       <motion.div
                         key={request.request_id}
                         initial={{ opacity: 0, y: 10 }}

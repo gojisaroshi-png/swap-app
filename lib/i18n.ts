@@ -35,6 +35,12 @@ export const translations = {
     'profile.request': 'Request',
     'profile.usdt_network': 'USDT Network',
     'profile.select_network': 'Select network',
+    'profile.show_all': 'Show all',
+    'profile.show_less': 'Show less',
+    'profile.filter_by_status': 'Filter by status',
+    'profile.filter_by_amount': 'Filter by amount',
+    'profile.sort_by_date': 'Sort by date',
+    'profile.sort_by_amount': 'Sort by amount',
     
     // Buy Page
     'buy.requires_auth': 'Authentication required',
@@ -110,6 +116,7 @@ export const translations = {
     'operator.complete_withdrawal': 'Complete Withdrawal',
     'operator.cancel_withdrawal': 'Cancel Withdrawal',
     'operator.withdrawal_amount': 'Amount',
+    'operator.back_to_panel': 'Back to Panel',
     
     // Statuses
     'status.pending': 'Pending',
@@ -120,6 +127,7 @@ export const translations = {
     'status.disputed': 'Disputed',
     'status.waiting': 'Waiting',
     'status.ongoing': 'Ongoing',
+    'status.all': 'All',
     
     // Common
     'common.btc': 'Bitcoin (BTC)',
@@ -171,6 +179,12 @@ export const translations = {
     'profile.request': 'Заявка',
     'profile.usdt_network': 'Сеть USDT',
     'profile.select_network': 'Выберите сеть',
+    'profile.show_all': 'Показать все',
+    'profile.show_less': 'Свернуть',
+    'profile.filter_by_status': 'Фильтр по статусу',
+    'profile.filter_by_amount': 'Фильтр по сумме',
+    'profile.sort_by_date': 'Сортировка по дате',
+    'profile.sort_by_amount': 'Сортировка по сумме',
     
     // Buy Page
     'buy.requires_auth': 'Требуется авторизация',
@@ -246,6 +260,7 @@ export const translations = {
     'operator.complete_withdrawal': 'Завершить вывод',
     'operator.cancel_withdrawal': 'Отменить вывод',
     'operator.withdrawal_amount': 'Сумма',
+    'operator.back_to_panel': 'Вернуться в панель',
     
     // Statuses
     'status.pending': 'Ожидает',
@@ -256,6 +271,7 @@ export const translations = {
     'status.disputed': 'Спор',
     'status.waiting': 'Ожидание',
     'status.ongoing': 'В процессе',
+    'status.all': 'Все',
     
     // Common
     'common.btc': 'Bitcoin (BTC)',

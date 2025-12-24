@@ -409,7 +409,11 @@ export default function OperatorPage() {
   const otherRequests = filteredRequests.filter(request =>
     request.status !== 'pending' && request.status !== 'processing' && request.status !== 'paid'
   );
-  const sortedRequests = [...activeRequests, ...otherRequests];
+  
+  // Ограничиваем отображение до 3 последних активных заявок
+  const limitedActiveRequests = activeRequests.slice(0, 3);
+  const limitedOtherRequests = otherRequests.slice(0, 3);
+  const sortedRequests = [...limitedActiveRequests, ...limitedOtherRequests];
   
   // Фильтрация заявок на вывод по поисковому запросу
   const filteredWithdrawalRequests = withdrawalRequests.filter(request =>
@@ -417,6 +421,9 @@ export default function OperatorPage() {
     request.crypto_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.wallet_address.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Ограничиваем отображение до 3 последних заявок на вывод
+  const limitedWithdrawalRequests = filteredWithdrawalRequests.slice(0, 3);
 
   return (
     <>
@@ -507,9 +514,17 @@ export default function OperatorPage() {
             {/* Список заявок */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Заявки на покупку
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Заявки на покупку
+                  </h2>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/purchases')}
+                  >
+                    Показать все
+                  </Button>
+                </div>
                 
                 <div className="space-y-4">
                   {sortedRequests.length > 0 ? (
@@ -576,13 +591,21 @@ export default function OperatorPage() {
             {/* Список заявок на вывод */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mt-6">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Заявки на вывод
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Заявки на вывод
+                  </h2>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/withdrawals')}
+                  >
+                    Показать все
+                  </Button>
+                </div>
                 
                 <div className="space-y-4">
-                  {filteredWithdrawalRequests.length > 0 ? (
-                    filteredWithdrawalRequests.map((request) => (
+                  {limitedWithdrawalRequests.length > 0 ? (
+                    limitedWithdrawalRequests.map((request) => (
                       <motion.div
                         key={request.id}
                         initial={{ opacity: 0, y: 10 }}
