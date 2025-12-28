@@ -34,6 +34,10 @@ export async function getCurrentUser() {
     });
     
     if (!response.ok) {
+      if (response.status === 403) {
+        // Пользователь забанен
+        throw new Error('User is banned');
+      }
       throw new Error('Failed to fetch user data');
     }
     

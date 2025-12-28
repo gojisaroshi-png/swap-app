@@ -26,6 +26,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Проверка, не забанен ли пользователь
+    if (user.isBanned) {
+      return NextResponse.json(
+        { error: 'Пользователь забанен' },
+        { status: 403 }
+      );
+    }
+
     // Проверка пароля
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {

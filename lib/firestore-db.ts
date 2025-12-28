@@ -33,7 +33,8 @@ export async function createUser(userData: any) {
   const userDataWithTimestamp = {
     ...userData,
     created_at: serverTimestamp(),
-    id: userRef.id
+    id: userRef.id,
+    isBanned: false
   };
   await setDoc(userRef, userDataWithTimestamp);
   return { id: userRef.id, ...userDataWithTimestamp };
@@ -85,6 +86,11 @@ export async function getAllUsers() {
 
 export async function updateUserRole(id: string, userData: any) {
   return updateUser(id, userData);
+}
+
+// Функция для бана/разбана пользователя
+export async function banUser(id: string, isBanned: boolean) {
+  return updateUser(id, { isBanned });
 }
 
 // Session operations

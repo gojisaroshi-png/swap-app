@@ -41,6 +41,9 @@ function isValidWalletAddress(address: string, cryptoType: string, network?: str
       } else if (network === 'SPL') {
         // SPL адреса (Solana)
         return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(cleanAddress);
+      } else if (network === 'BEP-20') {
+        // BEP-20 адреса (Binance Smart Chain) - такие же как Ethereum
+        return /^0x[a-fA-F0-9]{40}$/.test(cleanAddress);
       } else {
         // По умолчанию ERC-20 (Ethereum)
         return /^0x[a-fA-F0-9]{40}$/.test(cleanAddress);

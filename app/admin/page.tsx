@@ -246,6 +246,44 @@ export default function AdminPage() {
     }
   };
 
+  // Обработчик бана/разбана пользователя
+  const handleBanUser = async (userId: string, isBanned: boolean) => {
+    try {
+      const response = await fetch('/api/users/ban', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isBanned })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Успех',
+          description: isBanned ? 'Пользователь забанен' : 'Пользователь разбанен'
+        });
+        
+        // Обновление статуса бана пользователя в локальном состоянии
+        setUsers(users.map(user =>
+          user.id === userId ? { ...user, isBanned } : user
+        ));
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: data.error || 'Не удалось обновить статус бана пользователя',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при обновлении статуса бана пользователя',
+        variant: 'destructive'
+      });
+      console.error('Ban user error:', error);
+    }
+  };
+
   // Обработчик разрешения спора
   const handleResolveDispute = async (disputeId: number) => {
     try {
@@ -675,6 +713,16 @@ export default function AdminPage() {
                                   <option value="operator">Operator</option>
                                   <option value="admin">Admin</option>
                                 </select>
+                                <button
+                                  onClick={() => handleBanUser(user.id, !user.isBanned)}
+                                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                    user.isBanned
+                                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                      : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                  }`}
+                                >
+                                  {user.isBanned ? 'Разбанить' : 'Забанить'}
+                                </button>
                               </div>
                             </div>
                           </motion.div>
@@ -687,17 +735,9 @@ export default function AdminPage() {
               {/* Заявки на покупку */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-foreground">
-                      Заявки на покупку
-                    </h2>
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push('/purchases')}
-                    >
-                      Показать все
-                    </Button>
-                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">
+                    Заявки на покупку
+                  </h2>
                   
                   {/* Фильтр по статусу */}
                   <div className="mb-6">
@@ -779,17 +819,9 @@ export default function AdminPage() {
               {/* Заявки на вывод */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-foreground">
-                      Заявки на вывод
-                    </h2>
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push('/withdrawals')}
-                    >
-                      Показать все
-                    </Button>
-                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">
+                    Заявки на вывод
+                  </h2>
                   
                   {/* Фильтр по статусу */}
                   <div className="mb-6">
