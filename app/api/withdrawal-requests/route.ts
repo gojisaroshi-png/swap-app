@@ -9,6 +9,9 @@ import {
   convertTimestamps
 } from '@/lib/firestore-db';
 
+// Импортируем функции для отправки уведомлений в Telegram
+import { sendTelegramNotification, formatWithdrawalRequestNotification } from '@/lib/telegram-notifier';
+
 // Функция для валидации адресов криптокошельков
 function isValidWalletAddress(address: string, cryptoType: string, network?: string): boolean {
   // Базовая валидация адреса (непустая строка)
@@ -198,8 +201,32 @@ export async function POST(request: Request) {
     const { updateUserBalance } = await import('@/lib/firestore-db');
     await updateUserBalance(session.user_id, cryptoType, -parseFloat(amount));
 
+    // Получение данных пользователя для уведомления
+    const userData = await getUserById(session.user_id);
+
+    // Форматирование и отправка уведомления в Telegram
+    const notificationMessage = formatWithdrawalRequestNotification(newRequest, userData);
+    const notificationSent = await sendTelegramNotification(notificationMessage);
+
+    // Дополнительное логирование для отладки
+    console.log('Попытка отправки уведомления о новой заявке на вывод:', {
+      requestId: newRequest.id,
+      notificationSent,
+      userData: userData ? { 
+        id: (userData as any).user_id, 
+        username: (userData as any).username, 
+        email: (userData as any).email 
+      } : null,
+      requestDetails: {
+        cryptoType: newRequest.crypto_type,
+        amount: newRequest.amount,
+        walletAddress: newRequest.wallet_address,
+        network: newRequest.network
+      }
+    });
+
     return NextResponse.json(
-      { 
+      {
         success: true,
         message: 'Заявка на вывод успешно создана',
         requestId: newRequest.id

@@ -1,4 +1,4 @@
- import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { validateSession } from '@/lib/auth';
 import { 
   getAllBuyRequests,
@@ -10,6 +10,9 @@ import {
   convertTimestamps
 } from '@/lib/firestore-db';
 
+// Импортируем функции для отправки уведомлений в Telegram
+import { sendTelegramNotification, formatBuyRequestNotification } from '@/lib/telegram-notifier';
+
 // Получение списка заявок (для администраторов - все, для операторов - только ожидающие, для пользователей - только свои)
 export async function GET(request: Request) {
   try {
@@ -17,14 +20,14 @@ export async function GET(request: Request) {
     const cookieHeader = request.headers.get('cookie');
     const token = cookieHeader?.split(';').find(c => c.trim().startsWith('token='));
     const tokenValue = token?.split('=')[1];
-
+    
     if (!tokenValue) {
       return NextResponse.json(
         { error: 'Не авторизован' },
         { status: 401 }
       );
     }
-
+    
     // Проверка сессии
     const session: any = await validateSession(tokenValue);
     if (!session) {
@@ -33,7 +36,7 @@ export async function GET(request: Request) {
         { status: 401 }
       );
     }
-
+    
     // Получение данных пользователя из сессии
     const user: any = await getUserById(session.user_id);
     if (!user) {
@@ -42,13 +45,13 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
-
+    
     // Получение параметров запроса
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get('status');
-
+    
     let requests: any[] = [];
-
+    
     // Формирование запроса в зависимости от роли пользователя
     if (user.role === 'admin') {
       // Для администраторов - все заявки
@@ -61,15 +64,15 @@ export async function GET(request: Request) {
       // Для обычных пользователей - только их заявки
       requests = await getBuyRequestsByUserId(session.user_id);
     }
-
+    
     // Фильтрация по статусу, если указан
     if (statusFilter) {
       requests = requests.filter((request: any) => request.status === statusFilter);
     }
-
+    
     // Конвертация timestamp'ов
     const convertedRequests = requests.map((request: any) => convertTimestamps(request));
-
+    
     return NextResponse.json(
       {
         requests: convertedRequests,
@@ -93,14 +96,14 @@ export async function POST(request: Request) {
     const cookieHeader = request.headers.get('cookie');
     const token = cookieHeader?.split(';').find(c => c.trim().startsWith('token='));
     const tokenValue = token?.split('=')[1];
-
+    
     if (!tokenValue) {
       return NextResponse.json(
         { error: 'Не авторизован' },
         { status: 401 }
       );
     }
-
+    
     // Проверка сессии
     const session: any = await validateSession(tokenValue);
     if (!session) {
@@ -109,10 +112,10 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-
+    
     // Получение данных из тела запроса
     const { cryptoType, amount, currency, paymentMethod, walletAddress, cryptoAmount } = await request.json();
-
+    
     // Проверка обязательных полей
     if (!cryptoType || !amount || !currency || !paymentMethod) {
       return NextResponse.json(
@@ -120,20 +123,20 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
+    
     // Проверка, есть ли у пользователя активные заявки
     const userRequests = await getBuyRequestsByUserId(session.user_id);
     const activeRequest = userRequests.find((request: any) => 
       ['pending', 'processing'].includes(request.status)
     );
-
+    
     if (activeRequest) {
       return NextResponse.json(
         { error: 'У вас уже есть активная заявка. Дождитесь её завершения.' },
         { status: 400 }
       );
     }
-
+    
     // Получение текущих курсов криптовалют
     const pricesResponse = await fetch(`${request.url.split('/').slice(0, -1).join('/')}/crypto-prices`);
     const pricesData = await pricesResponse.json();
@@ -153,7 +156,32 @@ export async function POST(request: Request) {
       crypto_amount: calculatedCryptoAmount,
       status: 'pending'
     });
-
+    
+    // Получение данных пользователя для уведомления
+    const userData = await getUserById(session.user_id);
+    
+    // Форматирование и отправка уведомления в Telegram
+    const notificationMessage = formatBuyRequestNotification(newRequest, userData);
+    const notificationSent = await sendTelegramNotification(notificationMessage);
+    
+    // Дополнительное логирование для отладки
+    console.log('Попытка отправки уведомления о новой заявке на покупку:', {
+      requestId: newRequest.request_id,
+      notificationSent,
+      userData: userData ? { 
+        id: (userData as any).user_id, 
+        username: (userData as any).username, 
+        email: (userData as any).email 
+      } : null,
+      requestDetails: {
+        cryptoType: newRequest.crypto_type,
+        amount: newRequest.amount,
+        currency: newRequest.currency,
+        paymentMethod: newRequest.payment_method,
+        cryptoAmount: newRequest.crypto_amount
+      }
+    });
+    
     return NextResponse.json(
       { 
         success: true,
@@ -178,14 +206,14 @@ export async function PUT(request: Request) {
     const cookieHeader = request.headers.get('cookie');
     const token = cookieHeader?.split(';').find(c => c.trim().startsWith('token='));
     const tokenValue = token?.split('=')[1];
-
+    
     if (!tokenValue) {
       return NextResponse.json(
         { error: 'Не авторизован' },
         { status: 401 }
       );
     }
-
+    
     // Проверка сессии
     const session: any = await validateSession(tokenValue);
     if (!session) {
@@ -194,7 +222,7 @@ export async function PUT(request: Request) {
         { status: 401 }
       );
     }
-
+    
     // Получение данных пользователя из сессии
     const user: any = await getUserById(session.user_id);
     if (!user) {
@@ -203,7 +231,7 @@ export async function PUT(request: Request) {
         { status: 404 }
       );
     }
-
+    
     // Проверка роли пользователя
     let requestId, status, paymentDetails, receiptImage, transactionHash;
     
@@ -248,7 +276,7 @@ export async function PUT(request: Request) {
         );
       }
     }
-
+    
     // Проверка обязательных полей
     if (!requestId || !status) {
       return NextResponse.json(
@@ -256,7 +284,7 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
-
+    
     // Получение заявки по requestId
     const requestDetails: any = await getBuyRequestByRequestId(requestId);
     if (!requestDetails) {
@@ -265,7 +293,7 @@ export async function PUT(request: Request) {
         { status: 404 }
       );
     }
-
+    
     // Проверка роли пользователя для определенных статусов
     if (user.role !== 'admin' && user.role !== 'operator') {
       // Для статуса 'paid' проверяем, что пользователь является владельцем заявки
@@ -293,7 +321,7 @@ export async function PUT(request: Request) {
         { status: 400 }
         );
       }
-
+      
       // Проверка, что заявка не находится в обработке другим оператором
       if (status === 'processing' && 
           requestDetails.status === 'processing' && 
@@ -304,7 +332,7 @@ export async function PUT(request: Request) {
           { status: 400 }
         );
       }
-
+      
       // Проверка прав на отмену заявки
       if (status === 'cancelled' && user.role === 'operator') {
         // Оператор может отменить заявку только если он ее обрабатывает
@@ -316,12 +344,12 @@ export async function PUT(request: Request) {
         }
       }
     }
-
+    
     // Подготовка полей для обновления
     const updateData: any = {
       status: status
     };
-
+    
     // Добавляем дополнительные поля при определенных статусах
     if (status === 'processing' && (user.role === 'admin' || user.role === 'operator')) {
       updateData.operator_id = session.user_id;
@@ -336,10 +364,10 @@ export async function PUT(request: Request) {
       const { updateUserBalance } = await import('@/lib/firestore-db');
       await updateUserBalance(requestDetails.user_id, requestDetails.crypto_type, requestDetails.crypto_amount);
     }
-
+    
     // Обновление статуса заявки
     const updatedRequest = await updateBuyRequest(requestDetails.id, updateData);
-
+    
     return NextResponse.json(
       {
         success: true,
@@ -364,14 +392,14 @@ export async function DELETE(request: Request) {
     const cookieHeader = request.headers.get('cookie');
     const token = cookieHeader?.split(';').find(c => c.trim().startsWith('token='));
     const tokenValue = token?.split('=')[1];
-
+    
     if (!tokenValue) {
       return NextResponse.json(
         { error: 'Не авторизован' },
         { status: 401 }
       );
     }
-
+    
     // Проверка сессии
     const session: any = await validateSession(tokenValue);
     if (!session) {
@@ -380,10 +408,10 @@ export async function DELETE(request: Request) {
         { status: 401 }
       );
     }
-
+    
     // Получение данных из тела запроса
     const { requestId } = await request.json();
-
+    
     // Проверка обязательных полей
     if (!requestId) {
       return NextResponse.json(
@@ -391,7 +419,7 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
-
+    
     // Получение заявки по requestId
     const requestDetails: any = await getBuyRequestByRequestId(requestId);
     if (!requestDetails) {
@@ -400,7 +428,7 @@ export async function DELETE(request: Request) {
         { status: 404 }
       );
     }
-
+    
     // Получение данных пользователя из сессии
     const user: any = await getUserById(session.user_id);
     if (!user) {
@@ -409,7 +437,7 @@ export async function DELETE(request: Request) {
         { status: 404 }
       );
     }
-
+    
     // Проверка прав на удаление
     if (user.role !== 'admin' && 
         (requestDetails.user_id !== session.user_id || 
@@ -419,13 +447,13 @@ export async function DELETE(request: Request) {
         { status: 403 }
       );
     }
-
+    
     // Удаление заявки (в Firestore мы не удаляем документы, а помечаем их как удаленные)
     const updatedRequest = await updateBuyRequest(requestDetails.id, {
       deleted: true,
       deleted_at: new Date()
     });
-
+    
     return NextResponse.json(
       { 
         success: true,
