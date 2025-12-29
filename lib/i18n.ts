@@ -35,6 +35,7 @@ export const translations = {
     'profile.request': 'Request',
     'profile.usdt_network': 'USDT Network',
     'profile.select_network': 'Select network',
+    'profile.back_to_profile': 'Back to Profile',
     
     // Buy Page
     'buy.requires_auth': 'Authentication required',
@@ -171,6 +172,7 @@ export const translations = {
     'profile.request': 'Заявка',
     'profile.usdt_network': 'Сеть USDT',
     'profile.select_network': 'Выберите сеть',
+    'profile.back_to_profile': 'Назад к профилю',
     
     // Buy Page
     'buy.requires_auth': 'Требуется авторизация',

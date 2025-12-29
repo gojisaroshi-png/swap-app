@@ -664,9 +664,18 @@ export default function AdminPage() {
               {/* Пользователи */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Пользователи
-                  </h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Пользователи
+                    </h2>
+                    <Button
+                      onClick={() => router.push('/admin/users')}
+                      variant="outline"
+                      className="rounded-xl border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-all"
+                    >
+                      Перейти к списку пользователей
+                    </Button>
+                  </div>
 
                   {/* Поиск пользователей */}
                   <div className="mb-6">
@@ -690,6 +699,7 @@ export default function AdminPage() {
                           user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           user.email.toLowerCase().includes(searchTerm.toLowerCase())
                         )
+                        .slice(0, 3) // Отображаем только первых 3 пользователей
                         .map((user) => (
                           <motion.div
                             key={user.id}
@@ -731,32 +741,21 @@ export default function AdminPage() {
                   )}
                 </CardContent>
               </Card>
-
+              
               {/* Заявки на покупку */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Заявки на покупку
-                  </h2>
-                  
-                  {/* Фильтр по статусу */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Фильтр по статусу
-                    </label>
-                    <select
-                      value={buyRequestStatusFilter}
-                      onChange={(e) => setBuyRequestStatusFilter(e.target.value)}
-                      className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-orange-500 transition-all w-full"
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Последние заявки на покупку
+                    </h2>
+                    <Button
+                      onClick={() => router.push('/admin/buy-requests')}
+                      variant="outline"
+                      className="rounded-xl border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-all"
                     >
-                      <option value="all">Все статусы</option>
-                      <option value="pending">Ожидает</option>
-                      <option value="processing">Обрабатывается</option>
-                      <option value="paid">Оплачено</option>
-                      <option value="completed">Завершена</option>
-                      <option value="cancelled">Отменена</option>
-                      <option value="disputed">Спор</option>
-                    </select>
+                      Перейти к списку заявок на покупку
+                    </Button>
                   </div>
                   
                   {requestsLoading ? (
@@ -766,7 +765,7 @@ export default function AdminPage() {
                   ) : (
                     <div className="space-y-4">
                       {buyRequests && buyRequests.length > 0 ? (
-                        buyRequests.map((request: any) => (
+                        buyRequests.slice(0, 3).map((request: any) => (
                           <motion.div
                             key={request.request_id}
                             initial={{ opacity: 0, y: 10 }}
@@ -819,26 +818,17 @@ export default function AdminPage() {
               {/* Заявки на вывод */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-6">
-                    Заявки на вывод
-                  </h2>
-                  
-                  {/* Фильтр по статусу */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Фильтр по статусу
-                    </label>
-                    <select
-                      value={withdrawalRequestStatusFilter}
-                      onChange={(e) => setWithdrawalRequestStatusFilter(e.target.value)}
-                      className="rounded-xl bg-background/40 border border-white/10 px-3 py-2 text-foreground focus:border-orange-500 transition-all w-full"
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Последние заявки на вывод
+                    </h2>
+                    <Button
+                      onClick={() => router.push('/admin/withdrawal-requests')}
+                      variant="outline"
+                      className="rounded-xl border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-all"
                     >
-                      <option value="all">Все статусы</option>
-                      <option value="pending">Ожидает</option>
-                      <option value="processing">Обрабатывается</option>
-                      <option value="completed">Завершена</option>
-                      <option value="cancelled">Отменена</option>
-                    </select>
+                      Перейти к списку заявок на вывод
+                    </Button>
                   </div>
                   
                   {requestsLoading ? (
@@ -848,7 +838,7 @@ export default function AdminPage() {
                   ) : (
                     <div className="space-y-4">
                       {withdrawalRequests && withdrawalRequests.length > 0 ? (
-                        withdrawalRequests.map((request: any) => (
+                        withdrawalRequests.slice(0, 3).map((request: any) => (
                           <motion.div
                             key={request.id}
                             initial={{ opacity: 0, y: 10 }}

@@ -563,9 +563,18 @@ export default function ProfilePage() {
               {/* История заявок на вывод */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6 sm:p-8">
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                    {t('profile.withdrawal_history')}
-                  </h2>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                      {t('profile.withdrawal_history')}
+                    </h2>
+                    <Button
+                      onClick={() => router.push('/profile/withdrawal-requests')}
+                      variant="outline"
+                      className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                    >
+                      Перейти к истории выводов
+                    </Button>
+                  </div>
                   
                   {withdrawalRequests.length === 0 ? (
                     <div className="text-center py-8 sm:py-12">
@@ -573,7 +582,7 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {withdrawalRequests.map((request) => (
+                      {withdrawalRequests.slice(0, 3).map((request) => (
                         <motion.div
                           key={request.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -624,13 +633,21 @@ export default function ProfilePage() {
              </Card>
            </div>
              
-             
             {/* История заявок на покупку */}
             <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card mt-6">
               <CardContent className="p-6 sm:p-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6">
-                  {t('profile.buy_request_history')}
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                    {t('profile.buy_request_history')}
+                  </h2>
+                  <Button
+                    onClick={() => router.push('/profile/buy-requests')}
+                    variant="outline"
+                    className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                  >
+                    Перейти к истории покупок
+                  </Button>
+                </div>
                 
                 {buyRequests.length === 0 ? (
                   <div className="text-center py-8 sm:py-12">
@@ -638,7 +655,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {buyRequests.map((request) => (
+                    {buyRequests.slice(0, 3).map((request) => (
                       <motion.div
                         key={request.request_id}
                         initial={{ opacity: 0, y: 10 }}
