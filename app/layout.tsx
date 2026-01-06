@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { FAQButton } from "@/components/ui/faq-button";
+import { ContactButton } from "@/components/ui/contact-button";
 
 export const metadata: Metadata = {
   title: "Blockchain Lavka",
@@ -27,6 +28,7 @@ export default function RootLayout({
           <TopBar />
           <Toaster />
           {children}
+          <ContactButton />
           <Analytics />
           <SpeedInsights />
           <FAQButton />

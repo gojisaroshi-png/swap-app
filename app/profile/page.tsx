@@ -570,9 +570,9 @@ export default function ProfilePage() {
                     <Button
                       onClick={() => router.push('/profile/withdrawal-requests')}
                       variant="outline"
-                      className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                      className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all whitespace-normal sm:whitespace-nowrap text-xs sm:text-sm"
                     >
-                      Перейти к истории выводов
+                      {t('profile.go_to_withdrawal_history')}
                     </Button>
                   </div>
                   
@@ -643,9 +643,9 @@ export default function ProfilePage() {
                   <Button
                     onClick={() => router.push('/profile/buy-requests')}
                     variant="outline"
-                    className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                    className="rounded-xl border-violet-500/50 text-violet-400 hover:bg-violet-500/20 hover:text-violet-300 transition-all whitespace-normal sm:whitespace-nowrap text-xs sm:text-sm"
                   >
-                    Перейти к истории покупок
+                    {t('profile.go_to_buy_history')}
                   </Button>
                 </div>
                 

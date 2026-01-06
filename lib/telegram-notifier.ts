@@ -22,6 +22,19 @@ export async function sendTelegramNotification(message: string): Promise<boolean
   }
 }
 
+// Функция для отправки сообщения пользователю в Telegram
+export async function sendTelegramMessage(message: string, chatId: number): Promise<boolean> {
+  try {
+    // Отправляем сообщение пользователю
+    await bot.sendMessage(chatId, message);
+    console.log('Сообщение успешно отправлено пользователю в Telegram');
+    return true;
+  } catch (error) {
+    console.error('Ошибка при отправке сообщения пользователю в Telegram:', error);
+    return false;
+  }
+}
+
 // Функция для форматирования уведомления о заявке на покупку
 export function formatBuyRequestNotification(request: any, user: any): string {
   return `

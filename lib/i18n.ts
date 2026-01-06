@@ -36,6 +36,8 @@ export const translations = {
     'profile.usdt_network': 'USDT Network',
     'profile.select_network': 'Select network',
     'profile.back_to_profile': 'Back to Profile',
+    'profile.go_to_withdrawal_history': 'Go to withdrawal history',
+    'profile.go_to_buy_history': 'Go to purchase history',
     
     // Buy Page
     'buy.requires_auth': 'Authentication required',
@@ -173,6 +175,8 @@ export const translations = {
     'profile.usdt_network': 'Сеть USDT',
     'profile.select_network': 'Выберите сеть',
     'profile.back_to_profile': 'Назад к профилю',
+    'profile.go_to_withdrawal_history': 'Перейти к истории выводов',
+    'profile.go_to_buy_history': 'Перейти к истории покупок',
     
     // Buy Page
     'buy.requires_auth': 'Требуется авторизация',
