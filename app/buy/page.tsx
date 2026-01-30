@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { motion } from "framer-motion";
 import { Copy, Check, Clock, Coins, Send, Trophy } from "lucide-react";
@@ -32,26 +32,25 @@ export default function BuyCrypto() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Функция для отправки ссылки на чек
-  const handleReceiptSubmit = async (requestId: string, receiptUrl: string) => {
-    if (!receiptUrl) return;
+  // Функция для отправки изображения чека
+  const handleReceiptUpload = async (requestId: string, file: File) => {
+    if (!file) return;
 
     try {
-      // Обновляем заявку с URL чека
-      const updateResponse = await fetch('/api/buy-requests', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requestId,
-          status: 'paid',
-          receiptImage: receiptUrl
-        }),
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('requestId', requestId);
+
+      const response = await fetch('/api/upload-receipt', {
+        method: 'POST',
+        body: formData,
       });
 
-      if (updateResponse.ok) {
+      const result = await response.json();
+
+      if (response.ok) {
         // Обновляем список заявок
         const requestsResponse = await fetch('/api/buy-requests');
         if (requestsResponse.ok) {
@@ -63,10 +62,9 @@ export default function BuyCrypto() {
           });
         }
       } else {
-        const result = await updateResponse.json();
         toast({
           title: t('buy.error'),
-          description: result.error || t('buy.failed_to_update_request'),
+          description: result.error || t('buy.failed_to_upload_receipt'),
           variant: "destructive",
         });
       }
@@ -76,7 +74,7 @@ export default function BuyCrypto() {
         description: t('buy.error_uploading_receipt'),
         variant: "destructive",
       });
-      console.error('Error submitting receipt:', error);
+      console.error('Error uploading receipt:', error);
     }
   };
 
@@ -476,14 +474,17 @@ export default function BuyCrypto() {
                           <div className="flex gap-2 mt-1">
                             <Input
                               id={`receipt-${request.request_id}`}
-                              type="text"
-                              placeholder={t('buy.enter_receipt_url')}
-                              className="flex-1 h-12 rounded-2xl bg-background/40 border border-white/10 focus:border-purple-500 transition-all text-foreground"
+                              type="file"
+                              accept="image/*"
+                              ref={fileInputRef}
+                              className="flex-1 h-12 rounded-2xl bg-background/40 border border-white/10 focus:border-purple-500 transition-all text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
                             />
                             <Button
                               onClick={(e) => {
-                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                handleReceiptSubmit(request.request_id, input.value);
+                                const input = fileInputRef.current;
+                                if (input && input.files && input.files[0]) {
+                                  handleReceiptUpload(request.request_id, input.files[0]);
+                                }
                               }}
                               className="h-12 rounded-2xl bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700 hover:from-purple-700 hover:via-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all font-semibold"
                             >

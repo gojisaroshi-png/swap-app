@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -10,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBojHdyU_nmKUsQ6FlIu2Umkpc1rmX1Z7Q",
   authDomain: "blockchain-lavka.firebaseapp.com",
   projectId: "blockchain-lavka",
-  storageBucket: "blockchain-lavka.firebasestorage.app",
+  storageBucket: "blockchain-lavka.appspot.com",
   messagingSenderId: "207878567702",
   appId: "1:207878567702:web:5a8bc64a19757d693d8237"
 };
@@ -24,4 +25,7 @@ const db = getFirestore(app);
 // Initialize Firebase Authentication
 const auth = getAuth(app);
 
-export { db, auth };
+// Initialize Cloud Storage
+const storage = getStorage(app);
+
+export { db, auth, storage };
