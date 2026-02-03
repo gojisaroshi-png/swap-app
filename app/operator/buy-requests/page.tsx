@@ -295,8 +295,9 @@ export default function OperatorBuyRequestsPage() {
   }
 
   // Фильтрация заявок по поисковому запросу и статусу
+  // Для операторов скрываем завершенные заявки и чеки на подтверждении (заявки со статусом 'paid')
   const filteredRequests = requests.filter(request =>
-    (user?.role === 'operator' ? request.status !== 'completed' : true) &&
+    (user?.role === 'operator' ? request.status !== 'completed' && request.status !== 'paid' : true) &&
     (buyRequestStatusFilter === 'all' || request.status === buyRequestStatusFilter) &&
     (request.request_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (request.user_username && request.user_username.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -305,10 +306,10 @@ export default function OperatorBuyRequestsPage() {
 
   // Разделение заявок на активные и остальные
   const activeRequests = filteredRequests.filter(request =>
-    request.status === 'pending' || request.status === 'processing' || request.status === 'paid'
+    request.status === 'pending' || request.status === 'processing'
   );
   const otherRequests = filteredRequests.filter(request =>
-    request.status !== 'pending' && request.status !== 'processing' && request.status !== 'paid'
+    request.status !== 'pending' && request.status !== 'processing'
   );
   const sortedRequests = [...activeRequests, ...otherRequests];
 
@@ -509,7 +510,7 @@ export default function OperatorBuyRequestsPage() {
                     </div>
                   )}
                   
-                  {selectedRequest.receipt_image && (
+                  {selectedRequest.receipt_image && user?.role !== 'operator' && (
                     <div>
                       <p className="text-sm text-muted-foreground">Чек оплаты</p>
                       <a
@@ -566,24 +567,14 @@ export default function OperatorBuyRequestsPage() {
                     </div>
                   )}
                   
-                  {selectedRequest.status === 'paid' && (
+                  {selectedRequest.status === 'paid' && user?.role !== 'operator' && (
                     <div className="space-y-4">
                       <div className="text-center py-2 bg-yellow-500/10 rounded-lg">
-                        <p className="text-yellow-300 font-medium">Пользователь отправил чек оплаты</p>
+                        <p className="text-yellow-300 font-medium">Чек на проверке у администратора</p>
                       </div>
-                      <Input
-                        type="text"
-                        placeholder="Хэш транзакции"
-                        value={transactionHash}
-                        onChange={(e) => setTransactionHash(e.target.value)}
-                        className="rounded-xl bg-background/40 border-white/10 focus:border-violet-500 transition-all"
-                      />
-                      <Button
-                        onClick={() => handleUpdateStatus(selectedRequest.request_id, 'completed')}
-                        className="w-full rounded-xl py-6 text-lg font-semibold"
-                      >
-                        Отправить криптовалюту
-                      </Button>
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">Ожидание подтверждения чека администратором</p>
+                      </div>
                     </div>
                   )}
                   

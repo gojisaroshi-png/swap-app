@@ -356,6 +356,12 @@ export async function PUT(request: Request) {
       updateData.payment_details = paymentDetails || '';
     } else if (status === 'paid') {
       updateData.receipt_image = receiptImage || '';
+      // При установке статуса 'paid' отправляем уведомление администратору
+      if (user.role !== 'admin' && user.role !== 'operator') {
+        // Отправляем уведомление администратору о новом чеке
+        const adminNotificationMessage = `Новый чек оплаты от пользователя ${requestDetails.user_username} по заявке #${requestDetails.request_id}. Сумма: ${requestDetails.amount} ${requestDetails.currency} → ${requestDetails.crypto_amount.toFixed(4)} ${requestDetails.crypto_type}.`;
+        await sendTelegramNotification(adminNotificationMessage);
+      }
     } else if (status === 'completed') {
       if (transactionHash) {
         updateData.transaction_hash = transactionHash;

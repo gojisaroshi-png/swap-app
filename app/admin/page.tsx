@@ -742,19 +742,19 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
               
-              {/* Заявки на покупку */}
+              {/* Чеки на подтверждении */}
               <Card className="rounded-3xl shadow-2xl border border-white/10 bg-card">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-foreground">
-                      Последние заявки на покупку
+                      Чеки на подтверждении
                     </h2>
                     <Button
-                      onClick={() => router.push('/admin/buy-requests')}
+                      onClick={() => router.push('/admin/pending-checks')}
                       variant="outline"
                       className="rounded-xl border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 transition-all"
                     >
-                      Перейти к списку заявок на покупку
+                      Перейти к списку чеков
                     </Button>
                   </div>
                   
@@ -765,49 +765,42 @@ export default function AdminPage() {
                   ) : (
                     <div className="space-y-4">
                       {buyRequests && buyRequests.length > 0 ? (
-                        buyRequests.slice(0, 3).map((request: any) => (
-                          <motion.div
-                            key={request.request_id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h3 className="font-semibold">Заявка #{request.request_id}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  Пользователь: {request.user_username}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {request.amount} {request.currency} → {request.crypto_type}
-                                </p>
+                        buyRequests
+                          .filter((request: any) => request.status === 'paid')
+                          .slice(0, 3)
+                          .map((request: any) => (
+                            <motion.div
+                              key={request.request_id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="bg-background/40 rounded-2xl p-4 border border-white/10 hover:border-orange-500/30 transition-all"
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <h3 className="font-semibold">Заявка #{request.request_id}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    Пользователь: {request.user_username}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {request.amount} {request.currency} → {request.crypto_amount.toFixed(4)} {request.crypto_type}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    request.status === 'paid'
+                                      ? 'bg-yellow-500/20 text-yellow-400'
+                                      : 'bg-yellow-500/20 text-yellow-400'
+                                  }`}>
+                                    Чек на подтверждении
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  request.status === 'completed'
-                                    ? 'bg-green-500/20 text-green-400'
-                                    : request.status === 'processing'
-                                      ? 'bg-blue-500/20 text-blue-400'
-                                      : request.status === 'cancelled'
-                                        ? 'bg-red-500/20 text-red-400'
-                                        : request.status === 'disputed'
-                                          ? 'bg-purple-500/20 text-purple-400'
-                                          : 'bg-yellow-500/20 text-yellow-400'
-                                }`}>
-                                  {request.status === 'pending' && 'Ожидает'}
-                                  {request.status === 'processing' && 'Обрабатывается'}
-                                  {request.status === 'completed' && 'Завершена'}
-                                  {request.status === 'cancelled' && 'Отменена'}
-                                  {request.status === 'disputed' && 'Спор'}
-                                </span>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))
+                            </motion.div>
+                          ))
                       ) : (
                         <div className="text-center py-8">
-                          <p className="text-muted-foreground">Заявки не найдены</p>
+                          <p className="text-muted-foreground">Нет чеков на подтверждении</p>
                         </div>
                       )}
                     </div>
